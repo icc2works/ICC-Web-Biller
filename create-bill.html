@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Bill — Indian CNC Carving</title>
+  <meta name="description" content="Create a new CNC billing invoice — select items with unit price and quantity.">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .bill-layout {
+      display: grid;
+      grid-template-columns: 1fr 300px;
+      gap: 24px;
+      align-items: start;
+    }
+    @media (max-width: 900px) {
+      .bill-layout { grid-template-columns: 1fr; }
+    }
+    @keyframes fadeOut {
+      from { opacity:1; transform:translateX(0); }
+      to   { opacity:0; transform:translateX(-20px); }
+    }
+    .items-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+    }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="index.html" class="navbar-brand">
+    <div class="brand-icon">⚙️</div>
+    <div>
+      <div class="brand-name">Indian CNC Carving</div>
+      <span class="brand-sub">Billing System</span>
+    </div>
+  </a>
+  <ul class="nav-links">
+    <li><a href="index.html">🏠 Dashboard</a></li>
+    <li><a href="create-bill.html" class="active">🧾 New Bill</a></li>
+    <li><a href="customers.html">👥 Customers</a></li>
+    <li><a href="reports.html">📊 Reports</a></li>
+    <li><a href="settings.html">⚙️ Settings</a></li>
+  </ul>
+  <div id="navClock" class="nav-date">Loading…</div>
+</nav>
+
+<div class="container">
+
+  <div class="page-header flex-between">
+    <div>
+      <div class="section-label">Billing</div>
+      <h1 class="page-title">Create New Bill</h1>
+      <p class="page-subtitle">Select items → set unit price & quantity → save invoice.</p>
+    </div>
+    <a href="index.html" class="btn btn-secondary">← Back</a>
+  </div>
+
+  <div class="bill-layout">
+
+    <!-- LEFT: Items -->
+    <div>
+
+      <!-- Customer & Info -->
+      <div class="card mb-24">
+        <div class="section-label">Bill Details</div>
+        <div class="grid-2">
+          <div class="form-group">
+            <label for="billCustomer">Customer *</label>
+            <div style="display:flex;gap:8px;">
+              <select id="billCustomer" style="flex:1;">
+                <option value="">— Select Customer —</option>
+              </select>
+              <button class="btn btn-secondary btn-icon" onclick="openModal('addCustomerModal')" title="Add new customer">➕</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="billStatus">Payment Status</label>
+            <select id="billStatus">
+              <option value="paid">✅ Paid</option>
+              <option value="pending">⏳ Pending</option>
+              <option value="partial">🔷 Partial</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="form-group">
+            <label for="billPayMethod">Payment Method</label>
+            <select id="billPayMethod">
+              <option value="Cash">💵 Cash</option>
+              <option value="UPI">📱 UPI</option>
+              <option value="Bank Transfer">🏦 Bank Transfer</option>
+              <option value="Cheque">📝 Cheque</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="billDiscount">Discount (₹)</label>
+            <input type="number" id="billDiscount" placeholder="0" min="0" step="1"
+                   oninput="calculateTotal()">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="billNote">Notes (optional)</label>
+          <textarea id="billNote" rows="2" placeholder="Any special notes…" style="resize:vertical;"></textarea>
+        </div>
+      </div>
+
+      <!-- Items Section -->
+      <div class="items-box">
+        <div class="flex-between mb-16">
+          <div>
+            <div class="section-label">Products</div>
+            <div style="font-size:12px;color:var(--text-secondary);">
+              <span id="itemCount">0</span> items · Unit Price × Qty = Subtotal
+            </div>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="addItem()">➕ Add Item</button>
+        </div>
+
+        <!-- Column headers -->
+        <div class="item-header">
+          <span>Category</span>
+          <span>Item Name</span>
+          <span>Unit Price</span>
+          <span>Qty</span>
+          <span>Subtotal</span>
+          <span></span>
+        </div>
+
+        <!-- Items Container -->
+        <div id="billItems"></div>
+
+        <button class="btn btn-secondary btn-full mt-8" onclick="addItem()"
+                style="border-style:dashed;opacity:0.7;">
+          ➕ Add Another Item
+        </button>
+      </div>
+
+    </div>
+
+    <!-- RIGHT: Summary Panel -->
+    <div>
+      <div class="card" style="position:sticky;top:80px;">
+        <div class="section-label">Bill Summary</div>
+
+        <div class="total-section" style="margin:0;border:none;padding:0;background:transparent;">
+          <div class="total-row">
+            <span>Total Price</span>
+            <span id="subTotal">₹0</span>
+          </div>
+          <div class="total-row" id="taxRow">
+            <span id="taxLabel">Tax (0%)</span>
+            <span id="taxAmount">₹0</span>
+          </div>
+          <div class="total-row">
+            <span style="color:var(--warning);">Discount</span>
+            <span id="discountDisplay" style="color:var(--warning);">₹0</span>
+          </div>
+          <div class="total-row grand">
+            <span>Final Price</span>
+            <span id="grandTotal">₹0</span>
+          </div>
+        </div>
+
+        <hr class="divider">
+
+        <button id="saveBillBtn" class="btn btn-primary btn-full btn-lg" onclick="saveBill()">
+          💾 Save &amp; Generate Bill
+        </button>
+        <button class="btn btn-secondary btn-full mt-8" onclick="resetBillForm()">
+          🔄 Reset Form
+        </button>
+
+        <hr class="divider" style="margin:16px 0;">
+
+        <button id="testInvoiceBtn" class="btn btn-full mt-8" 
+                style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; font-weight: 700; border: none; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);" 
+                onclick="generateTestInvoice()" 
+                title="Generate a test invoice with sample data for demonstration">
+          🧪 Generate Test Invoice
+        </button>
+
+        <hr class="divider" style="margin:16px 0;">
+
+        <div style="font-size:12px;color:var(--text-muted);text-align:center;line-height:1.8;">
+          💡 Unit Price × Qty = Subtotal<br>
+          Discount applied on final total
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- Quick Add Customer Modal -->
+<div class="modal-overlay" id="addCustomerModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">➕ Quick Add Customer</div>
+      <button class="modal-close" onclick="closeModal('addCustomerModal')">✕</button>
+    </div>
+    <div class="form-group">
+      <label for="qcName">Name *</label>
+      <input type="text" id="qcName" placeholder="Customer full name">
+    </div>
+    <div class="form-group">
+      <label for="qcPhone">Phone</label>
+      <input type="tel" id="qcPhone" placeholder="+91 00000 00000">
+    </div>
+    <div class="form-group">
+      <label for="qcAddress">Address</label>
+      <input type="text" id="qcAddress" placeholder="City / Area">
+    </div>
+    <div style="display:flex;gap:10px;margin-top:6px;">
+      <button class="btn btn-secondary" style="flex:1;" onclick="closeModal('addCustomerModal')">Cancel</button>
+      <button class="btn btn-primary" style="flex:1;" onclick="quickAddCustomer()">✅ Add Customer</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/storage.js"></script>
+<script src="js/app.js"></script>
+<script src="js/invoice-cloud.js"></script>
+<script src="js/billing.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var settings = Storage.getSettings();
+    var taxRate  = parseFloat(settings.taxRate) || 0;
+    var taxLbl   = document.getElementById('taxLabel');
+    if (taxLbl) taxLbl.textContent = 'Tax (' + taxRate + '%)';
+    if (taxRate === 0) {
+      var taxRow = document.getElementById('taxRow');
+      if (taxRow) taxRow.style.display = 'none';
+    }
+  });
+
+  function quickAddCustomer() {
+    var name    = document.getElementById('qcName').value.trim();
+    var phone   = document.getElementById('qcPhone').value.trim();
+    var address = document.getElementById('qcAddress').value.trim();
+    if (!name) { showToast('Name is required', 'warning'); return; }
+    var cust = Storage.addCustomer({ name: name, phone: phone, address: address });
+    populateCustomerSelect('billCustomer', cust.id);
+    document.getElementById('qcName').value    = '';
+    document.getElementById('qcPhone').value   = '';
+    document.getElementById('qcAddress').value = '';
+    closeModal('addCustomerModal');
+    showToast('Customer "' + name + '" added!', 'success');
+  }
+</script>
+</body>
+</html>

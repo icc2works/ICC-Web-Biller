@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settings — Indian CNC Carving</title>
+  <meta name="description" content="Configure company profile, tax rates, item types, and data management.">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="index.html" class="navbar-brand">
+    <div class="brand-icon">⚙️</div>
+    <div>
+      <div class="brand-name">Indian CNC Carving</div>
+      <span class="brand-sub">Billing System</span>
+    </div>
+  </a>
+  <ul class="nav-links">
+    <li><a href="index.html">🏠 Dashboard</a></li>
+    <li><a href="create-bill.html">🧾 New Bill</a></li>
+    <li><a href="customers.html">👥 Customers</a></li>
+    <li><a href="reports.html">📊 Reports</a></li>
+    <li><a href="settings.html" class="active">⚙️ Settings</a></li>
+  </ul>
+  <div id="navClock" class="nav-date">Loading…</div>
+</nav>
+
+<div class="container" style="max-width:780px;">
+
+  <div class="page-header flex-between">
+    <div>
+      <div class="section-label">Configuration</div>
+      <h1 class="page-title">Settings</h1>
+      <p class="page-subtitle">Company info, tax, item types, and data management</p>
+    </div>
+    <button class="btn btn-primary" onclick="saveAllSettings()">💾 Save All Changes</button>
+  </div>
+
+  <!-- Company Profile -->
+  <div class="settings-section">
+    <div class="settings-section-title">🏢 Company Profile</div>
+    <div class="grid-2">
+      <div class="form-group">
+        <label for="setCompanyName">Company Name</label>
+        <input type="text" id="setCompanyName" placeholder="Your business name">
+      </div>
+      <div class="form-group">
+        <label for="setCompanyGST">GST Number (optional)</label>
+        <input type="text" id="setCompanyGST" placeholder="27AABCU9603R1ZX">
+      </div>
+    </div>
+    <div class="form-group">
+      <label for="setCompanyAddress">Address (shown on invoice)</label>
+      <textarea id="setCompanyAddress" rows="2" placeholder="45, French Teacher St,&#10;Karaikal, Puducherry 609602" style="resize:vertical;"></textarea>
+    </div>
+    <div class="grid-2">
+      <div class="form-group">
+        <label for="setCompanyPhone">Primary Mobile</label>
+        <input type="tel" id="setCompanyPhone" placeholder="8870415956">
+      </div>
+      <div class="form-group">
+        <label for="setCompanyPhone2">Secondary Mobile (optional)</label>
+        <input type="tel" id="setCompanyPhone2" placeholder="9786876576">
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="form-group">
+        <label for="setWebsite">Website (optional)</label>
+        <input type="url" id="setWebsite" placeholder="https://indiancnccarving.com/">
+      </div>
+      <div class="form-group">
+        <label for="setCurrency">Currency Symbol</label>
+        <select id="setCurrency">
+          <option value="₹">₹ (INR - Rupee)</option>
+          <option value="$">$ (USD - Dollar)</option>
+          <option value="€">€ (EUR - Euro)</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- QR Code Upload -->
+    <div style="background:rgba(79,158,255,0.06);border:1px solid var(--border-accent);border-radius:var(--radius-md);padding:16px;">
+      <div style="font-size:12px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;">📱 Scan &amp; Pay QR Code</div>
+      <div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;">
+        <div id="qrPreviewWrap" style="width:90px;height:90px;border:2px dashed var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;">
+          <span style="font-size:11px;color:var(--text-muted);text-align:center;line-height:1.4;">No QR<br>uploaded</span>
+        </div>
+        <div style="flex:1;">
+          <p style="font-size:12px;color:var(--text-secondary);margin-bottom:10px;">Upload your UPI / bank QR code image. It will appear on every printed invoice.</p>
+          <label class="btn btn-secondary btn-sm" style="cursor:pointer;">
+            📷 Upload QR Image
+            <input type="file" id="qrImageInput" accept="image/*" style="display:none;" onchange="previewQR(this)">
+          </label>
+          <button class="btn btn-ghost btn-sm" onclick="clearQR()" style="margin-left:8px;">✕ Clear</button>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:6px;">PNG, JPG, GIF • Max 500KB • Stored locally</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Invoice Format ── -->
+  <div class="settings-section">
+    <div class="settings-section-title">📄 Invoice Format</div>
+    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">
+      Customise how your printed invoice looks — edit labels, colors, column headers, and totals layout directly on an A5 paper canvas.
+    </p>
+    <div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;">
+      <!-- Mini preview -->
+      <div style="border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden;background:#fff;width:165px;flex-shrink:0;box-shadow:0 4px 20px rgba(0,0,0,0.35);">
+        <div style="background:#111;text-align:center;padding:6px 2px;">
+          <div style="font-size:7px;font-weight:800;letter-spacing:2px;color:#fff;">INDIAN CNC CARVING</div>
+          <div style="font-size:5px;font-weight:600;letter-spacing:1px;color:#ccc;border-top:1px solid #333;margin-top:2px;padding-top:2px;">INVOICE</div>
+        </div>
+        <div style="font-size:5px;color:#111;padding:3px 5px;border-bottom:1px solid #eee;background:#f9f9f9;">
+          <b>Bill to:</b> Customer &nbsp; | &nbsp; <b>Invoice no:</b> ICC-0327-001
+        </div>
+        <table style="width:100%;border-collapse:collapse;font-size:5px;color:#111;">
+          <tr style="background:#ffe066;"><th style="padding:2px;border:1px solid #ccc;">S:NO</th><th style="padding:2px;border:1px solid #ccc;">Description</th><th style="padding:2px;border:1px solid #ccc;">Price</th><th style="padding:2px;border:1px solid #ccc;">Qty</th><th style="padding:2px;border:1px solid #ccc;">Sub.</th></tr>
+          <tr><td style="padding:2px;border:1px solid #ddd;text-align:center;">1</td><td style="padding:2px;border:1px solid #ddd;">Mayil Door</td><td style="padding:2px;border:1px solid #ddd;text-align:center;">6000</td><td style="padding:2px;border:1px solid #ddd;text-align:center;">1</td><td style="padding:2px;border:1px solid #ddd;text-align:center;">6000</td></tr>
+          <tr><td style="padding:2px;border:1px solid #ddd;text-align:center;">2</td><td style="padding:2px;border:1px solid #ddd;">Jannel Set</td><td style="padding:2px;border:1px solid #ddd;text-align:center;">2800</td><td style="padding:2px;border:1px solid #ddd;text-align:center;">1</td><td style="padding:2px;border:1px solid #ddd;text-align:center;">2800</td></tr>
+          <tr style="opacity:0.2;"><td style="padding:3px;border:1px solid #ddd;" colspan="5"></td></tr>
+          <tr style="opacity:0.2;"><td style="padding:3px;border:1px solid #ddd;" colspan="5"></td></tr>
+        </table>
+        <table style="width:100%;border-collapse:collapse;font-size:5px;color:#111;">
+          <tr><td style="width:55%;border:1px solid #ddd;" rowspan="3"></td><td style="padding:2px 4px;border:1px solid #ddd;text-align:right;font-weight:600;">Total Price :</td><td style="padding:2px 4px;border:1px solid #ddd;text-align:right;">8,800</td></tr>
+          <tr><td style="padding:2px 4px;border:1px solid #ddd;text-align:right;font-weight:600;">Discount :</td><td style="padding:2px 4px;border:1px solid #ddd;text-align:right;">0</td></tr>
+          <tr><td style="padding:2px 4px;border:1px solid #ddd;text-align:right;font-weight:800;">Final :</td><td style="padding:2px 4px;border:1px solid #ddd;text-align:right;font-weight:800;">8,800</td></tr>
+        </table>
+        <div style="font-size:5px;padding:4px 6px;display:flex;justify-content:space-between;border-top:1px solid #111;background:#f9f9f9;">
+          <b style="color:#111;">INDIAN CNC CARVING</b><span style="color:#555;">SCAN &amp; PAY ▪</span>
+        </div>
+      </div>
+      <!-- Actions -->
+      <div style="flex:1;min-width:200px;">
+        <div style="font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:8px;">Current Format: A5 Portrait</div>
+        <ul style="font-size:12px;color:var(--text-secondary);line-height:2.2;margin-bottom:16px;padding-left:18px;">
+          <li>Click any cell on the A5 paper to edit text directly</li>
+          <li>Change column headers, label texts, row colors</li>
+          <li>Add or remove totals rows</li>
+          <li>Insert bill data variables (Bill No, Customer…)</li>
+          <li>Preview with sample data before saving</li>
+        </ul>
+        <a href="invoice-format.html" class="btn btn-primary" style="display:inline-flex;align-items:center;gap:8px;">
+          ✏️ Edit Invoice Format
+        </a>
+        <button class="btn btn-ghost btn-sm" style="margin-left:10px;" onclick="resetInvoiceFmt()">↺ Reset Default</button>
+        <div id="invFmtStatus" style="margin-top:10px;font-size:11px;color:var(--text-muted);"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Billing Config -->
+
+  <div class="settings-section">
+    <div class="settings-section-title">🧾 Billing Configuration</div>
+    <div class="grid-2">
+      <div class="form-group">
+        <label for="setTaxRate">Tax Rate (%)</label>
+        <input type="number" id="setTaxRate" min="0" max="100" step="0.5" placeholder="0">
+      </div>
+      <div class="form-group">
+        <label for="setDefaultRate">Default Rate (₹/sq.ft)</label>
+        <input type="number" id="setDefaultRate" min="0" placeholder="e.g. 250">
+      </div>
+    </div>
+    <div style="padding:12px 14px;background:rgba(79,158,255,0.06);border-radius:var(--radius-md);font-size:12px;color:var(--text-secondary);">
+      💡 Dimensions entered in <strong style="color:var(--text-primary);">inches</strong>.
+      Area is auto-computed as <strong style="color:var(--accent-3);">(H×W)/144 = sq.ft</strong>.
+      Then: <strong style="color:var(--accent-3);">sq.ft × Rate = Item Amount</strong>.
+    </div>
+  </div>
+
+  <!-- ═══════════════ THEME APPEARANCE ═══════════════ -->
+  <div class="settings-section">
+    <div class="settings-section-title">🎨 Theme Appearance</div>
+    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">
+      Choose your preferred theme. The selection applies across all pages instantly.
+    </p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <!-- Dark Theme Card -->
+      <div id="themeDarkBtn" class="active" onclick="setTheme('dark')"
+        style="cursor:pointer;border-radius:var(--radius-lg);padding:20px;border:2px solid var(--border);transition:all 0.3s;position:relative;overflow:hidden;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+          <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg, #0a0e1a, #1a2040);display:flex;align-items:center;justify-content:center;font-size:22px;border:1px solid rgba(255,255,255,0.1);">
+            🌙
+          </div>
+          <div>
+            <div style="font-weight:700;font-size:15px;">Dark Theme</div>
+            <div style="font-size:11px;color:var(--text-secondary);">Easy on the eyes</div>
+          </div>
+        </div>
+        <!-- Mini color preview -->
+        <div style="display:flex;gap:6px;margin-top:8px;">
+          <div style="width:24px;height:24px;border-radius:6px;background:#0a0e1a;border:1px solid rgba(255,255,255,0.15);" title="Background"></div>
+          <div style="width:24px;height:24px;border-radius:6px;background:#0f1629;border:1px solid rgba(255,255,255,0.15);" title="Card"></div>
+          <div style="width:24px;height:24px;border-radius:6px;background:#4f9eff;" title="Accent"></div>
+          <div style="width:24px;height:24px;border-radius:6px;background:#00d4aa;" title="Success"></div>
+          <div style="width:24px;height:24px;border-radius:6px;background:#7c5cfc;" title="Purple"></div>
+          <div style="width:24px;height:24px;border-radius:6px;background:#f0f4ff;border:1px solid rgba(255,255,255,0.15);" title="Text"></div>
+        </div>
+      </div>
+      <!-- Light Theme Card -->
+      <div id="themeLightBtn" onclick="setTheme('light')"
+        style="cursor:pointer;border-radius:var(--radius-lg);padding:20px;border:2px solid var(--border);transition:all 0.3s;position:relative;overflow:hidden;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+          <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg, #f0f2f5, #e2e8f0);display:flex;align-items:center;justify-content:center;font-size:22px;border:1px solid rgba(0,0,0,0.1);">
+            ☀️
+          </div>
+          <div>
+            <div style="font-weight:700;font-size:15px;">Light Theme</div>
+            <div style="font-size:11px;color:var(--text-secondary);">Clean and bright</div>
+          </div>
+        </div>
+        <!-- Mini color preview -->
+        <div style="display:flex;gap:6px;margin-top:8px;">
+          <div style="width:24px;height:24px;border-radius:6px;background:#f0f2f5;border:1px solid rgba(0,0,0,0.12);" title="Background"></div>
+          <div style="width:24px;height:24px;border-radius:6px;background:#ffffff;border:1px solid rgba(0,0,0,0.12);" title="Card"></div>
+          <div style="width:24px;height:24px;border-radius:6px;background:#2d7dd2;" title="Accent"></div>
+          <div style="width:24px;height:24px;border-radius:6px;background:#00a87e;" title="Success"></div>
+          <div style="width:24px;height:24px;border-radius:6px;background:#6041d4;" title="Purple"></div>
+          <div style="width:24px;height:24px;border-radius:6px;background:#1a202c;border:1px solid rgba(0,0,0,0.12);" title="Text"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ ADD NEW ITEM ═══════════════ -->
+  <div class="settings-section">
+    <div class="settings-section-title">➕ Add New Item</div>
+    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">
+      Add products to your catalog. Default prices auto-fill on the bill page (still editable per bill).
+    </p>
+
+    <!-- Add Item Form -->
+    <div style="background:linear-gradient(135deg, rgba(79,158,255,0.08), rgba(124,92,252,0.06));border:1.5px solid var(--border-accent);border-radius:var(--radius-lg);padding:24px;margin-bottom:20px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+        <div class="form-group" style="margin-bottom:0;">
+          <label for="newItemCat">📂 Category</label>
+          <select id="newItemCat"></select>
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <label for="newItemName">📦 Item Name</label>
+          <input type="text" id="newItemName" placeholder="e.g. Special Door, Jannel Set">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr auto;gap:16px;align-items:flex-end;">
+        <div class="form-group" style="margin-bottom:0;">
+          <label for="newItemPrice">💰 Default Price (₹)</label>
+          <input type="number" id="newItemPrice" placeholder="Enter price" min="0" step="1">
+        </div>
+        <button class="btn btn-primary btn-lg" onclick="addCatalogItemUI()" style="height:50px;min-width:160px;">
+          ➕ Add Item
+        </button>
+      </div>
+    </div>
+
+    <!-- Add New Category -->
+    <div style="background:rgba(0,212,170,0.06);border:1.5px solid rgba(0,212,170,0.2);border-radius:var(--radius-md);padding:16px;">
+      <div style="font-size:12px;font-weight:700;color:var(--accent-3);margin-bottom:10px;text-transform:uppercase;letter-spacing:1px;">📁 Add New Category</div>
+      <div style="display:flex;gap:12px;align-items:flex-end;">
+        <div style="flex:1;">
+          <label for="newCatName">Category Name</label>
+          <input type="text" id="newCatName" placeholder="e.g. Frames, Pillars, Custom Work…">
+        </div>
+        <button class="btn btn-success" onclick="addCatalogCategoryUI()" style="height:50px;min-width:160px;">
+          ➕ Add Category
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ ITEM LIST ═══════════════ -->
+  <div class="settings-section">
+    <div class="settings-section-title">🗂️ Your Items</div>
+    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">
+      Browse and manage all items by category. Click a price to edit it inline.
+    </p>
+
+    <!-- Category filter tabs -->
+    <div id="catalogCatTabs" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;"></div>
+
+    <!-- Catalog table -->
+    <div id="catalogTableWrap" class="table-wrap" style="margin-bottom:16px;"></div>
+
+    <!-- Actions row -->
+    <div style="display:flex;justify-content:flex-end;gap:10px;">
+      <button class="btn btn-ghost btn-sm" onclick="resetCatalogToDefaults()">🔄 Reset Catalog to Defaults</button>
+    </div>
+  </div>
+
+  <!-- Data Management -->
+  <div class="settings-section">
+    <div class="settings-section-title">💾 Data Management</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div style="background:rgba(0,212,170,0.06);border:1px solid rgba(0,212,170,0.2);border-radius:var(--radius-md);padding:16px;">
+        <div style="font-size:13px;font-weight:600;margin-bottom:8px;">📤 Export Backup</div>
+        <p style="font-size:12px;color:var(--text-secondary);margin-bottom:12px;">Download all bills, customers and settings as a JSON backup file.</p>
+        <button class="btn btn-success btn-full" onclick="exportBackup()">📥 Export All Data</button>
+      </div>
+      <div style="background:rgba(79,158,255,0.06);border:1px solid rgba(79,158,255,0.2);border-radius:var(--radius-md);padding:16px;">
+        <div style="font-size:13px;font-weight:600;margin-bottom:8px;">📂 Import Backup</div>
+        <p style="font-size:12px;color:var(--text-secondary);margin-bottom:12px;">Restore data from a previously exported JSON backup file.</p>
+        <label class="btn btn-purple btn-full" style="cursor:pointer;">
+          📤 Import Backup
+          <input type="file" id="importFile" accept=".json" style="display:none;" onchange="importBackup(this)">
+        </label>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <div style="background:rgba(255,107,107,0.06);border:1px solid rgba(255,107,107,0.2);border-radius:var(--radius-md);padding:16px;">
+      <div style="font-size:13px;font-weight:600;color:var(--danger);margin-bottom:6px;">⚠️ Danger Zone</div>
+      <p style="font-size:12px;color:var(--text-secondary);margin-bottom:12px;">
+        These actions are irreversible. Export a backup before proceeding.
+      </p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn btn-danger btn-sm" onclick="clearAllBills()">🗑️ Clear All Bills</button>
+        <button class="btn btn-danger btn-sm" onclick="clearAllCustomers()">🗑️ Clear All Customers</button>
+        <button class="btn btn-danger btn-sm" onclick="clearAllData()">💥 Reset Everything</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Storage Usage -->
+  <div class="settings-section">
+    <div class="settings-section-title">📦 Storage Usage</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;text-align:center;">
+      <div>
+        <div style="font-size:24px;font-weight:800;color:var(--accent);" id="billCountDisp">0</div>
+        <div style="font-size:12px;color:var(--text-muted);">Bills</div>
+      </div>
+      <div>
+        <div style="font-size:24px;font-weight:800;color:var(--accent-3);" id="custCountDisp">0</div>
+        <div style="font-size:12px;color:var(--text-muted);">Customers</div>
+      </div>
+      <div>
+        <div style="font-size:24px;font-weight:800;color:var(--accent-2);" id="storageDisp">~0 KB</div>
+        <div style="font-size:12px;color:var(--text-muted);">Storage Used</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="text-align:center;color:var(--text-muted);font-size:12px;margin-top:24px;">
+    Indian CNC Carving Billing System v1.0 • Built with ❤️ • Data stored locally in your browser
+  </div>
+
+</div>
+
+<script src="js/storage.js"></script>
+<script src="js/app.js"></script>
+<script>
+  // ===================== SETTINGS PAGE SCRIPT =====================
+
+  let activeCat = '';  // currently viewed catalog category
+
+  document.addEventListener('DOMContentLoaded', () => {
+    loadSettings();
+    renderCatalog();
+    updateStorageStats();
+  });
+
+  // ---- Load form values ----
+  function loadSettings() {
+    const s = Storage.getSettings();
+    document.getElementById('setCompanyName').value    = s.companyName    || '';
+    document.getElementById('setCompanyPhone').value   = s.companyPhone   || '';
+    document.getElementById('setCompanyPhone2').value  = s.companyPhone2  || '';
+    document.getElementById('setCompanyAddress').value = s.companyAddress || '';
+    document.getElementById('setCompanyGST').value     = s.companyGST     || '';
+    document.getElementById('setWebsite').value        = s.website        || '';
+    document.getElementById('setCurrency').value       = s.currency       || '₹';
+    document.getElementById('setTaxRate').value        = s.taxRate        || 0;
+    document.getElementById('setDefaultRate').value    = s.defaultRate    || '';
+    // Load QR preview
+    const qrWrap = document.getElementById('qrPreviewWrap');
+    if (s.qrCode) {
+      qrWrap.innerHTML = '<img src="' + s.qrCode + '" style="width:100%;height:100%;object-fit:contain;">';
+    }
+    // Load theme toggle state
+    var currentTheme = localStorage.getItem('cnc_theme') || 'dark';
+    var darkBtn = document.getElementById('themeDarkBtn');
+    var lightBtn = document.getElementById('themeLightBtn');
+    if (darkBtn && lightBtn) {
+      darkBtn.classList.toggle('active', currentTheme === 'dark');
+      lightBtn.classList.toggle('active', currentTheme === 'light');
+    }
+  }
+
+  // ---- Save all settings (preserves catalog) ----
+  function saveAllSettings() {
+    const existing = Storage.getSettings();
+    const settings = {
+      ...existing,
+      companyName:    document.getElementById('setCompanyName').value.trim(),
+      companyPhone:   document.getElementById('setCompanyPhone').value.trim(),
+      companyPhone2:  document.getElementById('setCompanyPhone2').value.trim(),
+      companyAddress: document.getElementById('setCompanyAddress').value.trim(),
+      companyGST:     document.getElementById('setCompanyGST').value.trim(),
+      website:        document.getElementById('setWebsite').value.trim(),
+      currency:       document.getElementById('setCurrency').value,
+      taxRate:        parseFloat(document.getElementById('setTaxRate').value) || 0,
+      defaultRate:    document.getElementById('setDefaultRate').value || ''
+    };
+    Storage.saveSettings(settings);
+    showToast('Settings saved successfully!', 'success');
+    updateStorageStats();
+  }
+
+  // ---- QR Code Upload ----
+  function previewQR(input) {
+    const file = input.files[0];
+    if (!file) return;
+    if (file.size > 512 * 1024) { showToast('Image too large. Max 500KB.', 'warning'); return; }
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const dataUrl = e.target.result;
+      const qrWrap  = document.getElementById('qrPreviewWrap');
+      qrWrap.innerHTML = '<img src="' + dataUrl + '" style="width:100%;height:100%;object-fit:contain;">';
+      // Save immediately into settings
+      const existing = Storage.getSettings();
+      existing.qrCode = dataUrl;
+      Storage.saveSettings(existing);
+      showToast('QR code saved!', 'success');
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function clearQR() {
+    const qrWrap = document.getElementById('qrPreviewWrap');
+    qrWrap.innerHTML = '<span style="font-size:11px;color:var(--text-muted);text-align:center;line-height:1.4;">No QR<br>uploaded</span>';
+    const existing = Storage.getSettings();
+    existing.qrCode = '';
+    Storage.saveSettings(existing);
+    document.getElementById('qrImageInput').value = '';
+    showToast('QR code cleared', 'warning');
+  }
+
+
+  // ---- CATALOG RENDER ----
+  function renderCatalog(selectCat) {
+    const catalog = Storage.getCatalog();
+    const cats    = Object.keys(catalog);
+    if (!activeCat || !catalog[activeCat]) activeCat = cats[0] || '';
+    if (selectCat !== undefined && selectCat !== null) activeCat = selectCat;
+
+    // Count total items across all categories
+    let totalItems = 0;
+    cats.forEach(function(cat) { totalItems += catalog[cat].length; });
+
+    // Populate category tabs via DOM to avoid escaping issues
+    const tabsEl = document.getElementById('catalogCatTabs');
+    tabsEl.innerHTML = '';
+
+    // Summary badge above tabs
+    var summaryDiv = document.createElement('div');
+    summaryDiv.style.cssText = 'width:100%;display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;';
+    summaryDiv.innerHTML = '<span style="font-size:13px;color:var(--text-secondary);">📊 <strong style="color:var(--text-primary);">' + totalItems + '</strong> items in <strong style="color:var(--text-primary);">' + cats.length + '</strong> categories</span>';
+    tabsEl.appendChild(summaryDiv);
+
+    // Category tabs row
+    var tabsRow = document.createElement('div');
+    tabsRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;width:100%;';
+
+    cats.forEach(function(cat) {
+      var isAct = (cat === activeCat);
+      var btn = document.createElement('button');
+      btn.textContent = cat + ' (' + catalog[cat].length + ')';
+      btn.style.cssText = 'padding:8px 16px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all 0.2s;border:1.5px solid ' + (isAct ? 'var(--accent)' : 'var(--border)') + ';background:' + (isAct ? 'var(--accent-glow)' : 'transparent') + ';color:' + (isAct ? 'var(--accent)' : 'var(--text-secondary)') + ';';
+      btn.addEventListener('click', (function(c){ return function(){ renderCatalog(c); }; })(cat));
+      tabsRow.appendChild(btn);
+    });
+    tabsEl.appendChild(tabsRow);
+
+    // Populate category select for "Add Item"
+    const catSel = document.getElementById('newItemCat');
+    catSel.innerHTML = '';
+    cats.forEach(function(c) {
+      var opt = document.createElement('option');
+      opt.value = c;
+      opt.textContent = c;
+      if (c === activeCat) opt.selected = true;
+      catSel.appendChild(opt);
+    });
+
+
+    // Build table for active category
+    const items = catalog[activeCat] || [];
+    const wrap  = document.getElementById('catalogTableWrap');
+
+    if (cats.length === 0) {
+      wrap.innerHTML = `<div class="empty-state"><span class="empty-icon">🗂️</span><p>No categories yet. Add one using the form above.</p></div>`;
+      return;
+    }
+
+    wrap.innerHTML = `
+      <div style="padding:12px 16px;background:rgba(79,158,255,0.06);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <span style="font-size:14px;font-weight:700;color:var(--text-primary);">📂 ${escHtmlSet(activeCat)}</span>
+          <span class="badge badge-blue" style="margin-left:8px;">${items.length} item${items.length !== 1 ? 's' : ''}</span>
+        </div>
+        <button class="btn btn-danger btn-sm" onclick="deleteCatalogCategoryUI('${escAttr(activeCat)}')">
+          🗑️ Delete Category
+        </button>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:36px;">#</th>
+            <th>Item Name</th>
+            <th style="width:160px;">Default Price (₹)</th>
+            <th style="width:100px;">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${items.length === 0
+            ? `<tr><td colspan="4"><div class="empty-state" style="padding:24px;"><span class="empty-icon">📦</span><p>No items in this category yet.<br><span style="font-size:12px;color:var(--text-muted);">Use the "Add New Item" form above to add items.</span></p></div></td></tr>`
+            : items.map((item, i) => `
+              <tr>
+                <td style="color:var(--text-muted);font-size:12px;">${i + 1}</td>
+                <td style="font-weight:600;">${escHtmlSet(item.name)}</td>
+                <td>
+                  <input type="number" min="0"
+                    id="price-${activeCat.replace(/\s/g,'_')}-${i}"
+                    value="${item.price}"
+                    onchange="updatePriceUI('${escAttr(activeCat)}', '${escAttr(item.name)}', this.value)"
+                    style="width:120px;padding:6px 10px;font-size:13px;font-family:'JetBrains Mono',monospace;font-weight:600;border-radius:6px;border:1px solid var(--border);background:var(--bg-card);color:var(--accent-3);">
+                </td>
+                <td>
+                  <button class="btn btn-danger btn-sm"
+                    onclick="deleteCatalogItemUI('${escAttr(activeCat)}', '${escAttr(item.name)}')">
+                    🗑️
+                  </button>
+                </td>
+              </tr>
+            `).join('')
+          }
+        </tbody>
+      </table>
+    `;
+  }
+
+  function escAttr(s) { return (s||'').replace(/'/g, "\\'"); }
+  function escHtmlSet(str) {
+    const d = document.createElement('div');
+    d.appendChild(document.createTextNode(str || ''));
+    return d.innerHTML;
+  }
+
+  function updatePriceUI(category, itemName, newPrice) {
+    Storage.updateCatalogItemPrice(category, itemName, newPrice);
+    showToast(`Price updated: ${itemName} → ₹${Number(newPrice).toLocaleString('en-IN')}`, 'success');
+  }
+
+  function addCatalogItemUI() {
+    const cat   = document.getElementById('newItemCat').value.trim();
+    const name  = document.getElementById('newItemName').value.trim();
+    const price = parseFloat(document.getElementById('newItemPrice').value) || 0;
+    if (!cat)  { showToast('Select a category', 'warning'); return; }
+    if (!name) { showToast('Enter item name', 'warning'); return; }
+    Storage.addCatalogItem(cat, name, price);
+    document.getElementById('newItemName').value  = '';
+    document.getElementById('newItemPrice').value = '';
+    showToast(`"${name}" added to ${cat}`, 'success');
+    renderCatalog(cat);
+  }
+
+  function deleteCatalogItemUI(category, itemName) {
+    confirmAction(`Delete "${itemName}" from ${category}?`, () => {
+      Storage.deleteCatalogItem(category, itemName);
+      showToast(`"${itemName}" deleted`, 'error');
+      renderCatalog(category);
+    });
+  }
+
+  function addCatalogCategoryUI() {
+    const name = document.getElementById('newCatName').value.trim();
+    if (!name) { showToast('Enter a category name', 'warning'); return; }
+    if (!Storage.addCatalogCategory(name)) {
+      showToast('Category already exists', 'warning'); return;
+    }
+    document.getElementById('newCatName').value = '';
+    showToast(`Category "${name}" added`, 'success');
+    renderCatalog(name);
+  }
+
+  function deleteCatalogCategoryUI(category) {
+    const items = Storage.getCatalogItems(category).length;
+    confirmAction(
+      `Delete category "${category}"${items > 0 ? ` and all ${items} items in it` : ''}?`,
+      () => {
+        Storage.deleteCatalogCategory(category);
+        showToast(`Category "${category}" deleted`, 'error');
+        renderCatalog();
+      }
+    );
+  }
+
+  function resetCatalogToDefaults() {
+    confirmAction('Reset entire item catalog to factory defaults? Your price edits will be lost.', () => {
+      Storage.saveCatalog(DEFAULT_CATALOG);
+      showToast('Catalog reset to defaults', 'success');
+      renderCatalog();
+    });
+  }
+
+  // ---- Storage Stats ----
+  function updateStorageStats() {
+    document.getElementById('billCountDisp').textContent = Storage.getBills().length;
+    document.getElementById('custCountDisp').textContent = Storage.getCustomers().length;
+    let total = 0;
+    for (let key in localStorage) {
+      if (localStorage.hasOwnProperty(key)) {
+        total += (localStorage.getItem(key).length + key.length) * 2;
+      }
+    }
+    document.getElementById('storageDisp').textContent = '~' + Math.round(total / 1024) + ' KB';
+  }
+
+  // ---- Backup / Restore ----
+  function exportBackup() {
+    const data = Storage.exportAll();
+    const json = JSON.stringify(data, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url;
+    a.download = `cnc-billing-backup-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    showToast('Backup exported!', 'success');
+  }
+
+  function importBackup(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = JSON.parse(e.target.result);
+        if (!data.customers && !data.bills) {
+          showToast('Invalid backup file format', 'error'); return;
+        }
+        if (confirm('Import this backup? This will replace existing data.')) {
+          Storage.importAll(data);
+          showToast('Data imported successfully!', 'success');
+          loadSettings();
+          renderCatalog();
+          updateStorageStats();
+        }
+      } catch {
+        showToast('Failed to read backup file', 'error');
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  // ---- Danger Zone ----
+  function clearAllBills() {
+    confirmAction('Delete ALL bills permanently? Export a backup first!', () => {
+      Storage.saveBills([]);
+      showToast('All bills cleared', 'error');
+      updateStorageStats();
+    });
+  }
+
+  function clearAllCustomers() {
+    confirmAction('Delete ALL customers permanently?', () => {
+      Storage.saveCustomers([]);
+      showToast('All customers cleared', 'error');
+      updateStorageStats();
+    });
+  }
+
+  function clearAllData() {
+    confirmAction('⚠️ RESET EVERYTHING? All bills, customers and settings will be deleted. This CANNOT be undone!', () => {
+      localStorage.clear();
+      showToast('All data cleared. Reloading…', 'error');
+      setTimeout(() => location.reload(), 1500);
+    });
+  }
+
+
+  // ---- Invoice Format Reset ----
+  function resetInvoiceFmt() {
+    if (!confirm('Reset invoice format to default? Your customisations will be lost.')) return;
+    Storage.resetInvoiceTemplate();
+    const el = document.getElementById('invFmtStatus');
+    if (el) el.textContent = '✅ Invoice format reset to default.';
+    showToast('Invoice format reset to default.', 'warning');
+  }
+
+  // Enter key to add item
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      if (document.activeElement.id === 'newItemName' || document.activeElement.id === 'newItemPrice') {
+        addCatalogItemUI();
+      } else if (document.activeElement.id === 'newCatName') {
+        addCatalogCategoryUI();
+      }
+    }
+  });
+
+</script>
+</body>
+</html>

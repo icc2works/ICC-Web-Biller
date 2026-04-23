@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reports — Indian CNC Carving</title>
+  <meta name="description" content="View billing reports, filter by date and customer, and track total earnings.">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .filter-bar {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 18px 20px;
+      margin-bottom: 24px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: flex-end;
+    }
+    .filter-bar .form-group { margin: 0; flex: 1; min-width: 140px; }
+    .filter-bar label { margin-bottom: 5px; }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="index.html" class="navbar-brand">
+    <div class="brand-icon">⚙️</div>
+    <div>
+      <div class="brand-name">Indian CNC Carving</div>
+      <span class="brand-sub">Billing System</span>
+    </div>
+  </a>
+  <ul class="nav-links">
+    <li><a href="index.html">🏠 Dashboard</a></li>
+    <li><a href="create-bill.html">🧾 New Bill</a></li>
+    <li><a href="customers.html">👥 Customers</a></li>
+    <li><a href="reports.html" class="active">📊 Reports</a></li>
+    <li><a href="settings.html">⚙️ Settings</a></li>
+  </ul>
+  <div id="navClock" class="nav-date">Loading…</div>
+</nav>
+
+<div class="container">
+
+  <div class="page-header flex-between">
+    <div>
+      <div class="section-label">Analytics</div>
+      <h1 class="page-title">Reports</h1>
+      <p class="page-subtitle">All bills • Filter by date and customer</p>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-secondary" onclick="exportBillsCSV()">📥 Export CSV</button>
+      <a href="create-bill.html" class="btn btn-primary">➕ New Bill</a>
+    </div>
+  </div>
+
+  <!-- Summary Row -->
+  <div class="card-grid" style="margin-bottom:24px;">
+    <div class="stat-card blue">
+      <span class="stat-icon">🔢</span>
+      <div class="stat-label">Filtered Bills</div>
+      <div class="stat-value" id="rptCount">0</div>
+    </div>
+    <div class="stat-card green">
+      <span class="stat-icon">💰</span>
+      <div class="stat-label">Total Earnings</div>
+      <div class="stat-value" id="rptTotal">₹0</div>
+    </div>
+    <div class="stat-card orange">
+      <span class="stat-icon">✅</span>
+      <div class="stat-label">Paid</div>
+      <div class="stat-value" id="rptPaid">₹0</div>
+    </div>
+    <div class="stat-card red">
+      <span class="stat-icon">⏳</span>
+      <div class="stat-label">Pending</div>
+      <div class="stat-value" id="rptPending">₹0</div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filter-bar">
+    <div class="form-group">
+      <label>From Date</label>
+      <input type="date" id="filterFrom">
+    </div>
+    <div class="form-group">
+      <label>To Date</label>
+      <input type="date" id="filterTo">
+    </div>
+    <div class="form-group">
+      <label>Customer</label>
+      <select id="filterCustomer">
+        <option value="">All Customers</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Status</label>
+      <select id="filterStatus">
+        <option value="">All</option>
+        <option value="paid">Paid</option>
+        <option value="pending">Pending</option>
+        <option value="partial">Partial</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-primary" onclick="applyFilters()">🔍 Filter</button>
+      <button class="btn btn-secondary" onclick="resetFilters()">✕ Reset</button>
+    </div>
+  </div>
+
+  <!-- Quick Period Buttons -->
+  <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;">
+    <button class="btn btn-ghost btn-sm" onclick="setPeriod('today')">Today</button>
+    <button class="btn btn-ghost btn-sm" onclick="setPeriod('week')">This Week</button>
+    <button class="btn btn-ghost btn-sm" onclick="setPeriod('month')">This Month</button>
+    <button class="btn btn-ghost btn-sm" onclick="setPeriod('all')">All Time</button>
+  </div>
+
+  <!-- Table -->
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Bill No.</th>
+          <th>Customer</th>
+          <th>Date & Time</th>
+          <th>Items</th>
+          <th>Subtotal</th>
+          <th>Total</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="reportTableBody">
+        <tr><td colspan="8">
+          <div class="empty-state">
+            <span class="empty-icon">📊</span>
+            <p>No bills found. Create your first bill!</p>
+          </div>
+        </td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<!-- Bill Detail Modal -->
+<div class="modal-overlay" id="billDetailModal">
+  <div class="modal" style="max-width:700px;">
+    <div class="modal-header">
+      <div class="modal-title" id="billDetailTitle">Bill Details</div>
+      <button class="modal-close" onclick="closeModal('billDetailModal')">✕</button>
+    </div>
+    <div id="billDetailContent"></div>
+  </div>
+</div>
+
+<script src="js/storage.js"></script>
+<script src="js/app.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<script src="js/invoice-xlsx.js"></script>
+<script src="js/billing.js"></script>
+<script>
+  let currentBills = [];
+
+  document.addEventListener('DOMContentLoaded', () => {
+    // Populate customer select
+    const sel = document.getElementById('filterCustomer');
+    Storage.getCustomers().forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.id; opt.textContent = c.name;
+      sel.appendChild(opt);
+    });
+
+    // Check URL params
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('customer')) {
+      document.getElementById('filterCustomer').value = params.get('customer');
+    }
+    if (params.get('print')) {
+      setTimeout(() => printBill(params.get('print')), 800);
+    }
+
+    loadReports();
+  });
+
+  function applyFilters() { loadReports(); }
+
+  function resetFilters() {
+    document.getElementById('filterFrom').value = '';
+    document.getElementById('filterTo').value   = '';
+    document.getElementById('filterCustomer').value = '';
+    document.getElementById('filterStatus').value   = '';
+    loadReports();
+  }
+
+  function setPeriod(p) {
+    const now = new Date();
+    const from = document.getElementById('filterFrom');
+    const to   = document.getElementById('filterTo');
+    to.value = now.toISOString().split('T')[0];
+    if (p === 'today') {
+      from.value = to.value;
+    } else if (p === 'week') {
+      const d = new Date(now); d.setDate(d.getDate() - 7);
+      from.value = d.toISOString().split('T')[0];
+    } else if (p === 'month') {
+      from.value = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+    } else {
+      from.value = ''; to.value = '';
+    }
+    loadReports();
+  }
+
+  function loadReports() {
+    let bills = Storage.getBills();
+    const settings = Storage.getSettings();
+    const sym = settings.currency || '₹';
+
+    // Filters
+    const from     = document.getElementById('filterFrom').value;
+    const to       = document.getElementById('filterTo').value;
+    const custId   = document.getElementById('filterCustomer').value;
+    const status   = document.getElementById('filterStatus').value;
+
+    if (from)   bills = bills.filter(b => new Date(b.createdAt) >= new Date(from));
+    if (to)     bills = bills.filter(b => new Date(b.createdAt) <= new Date(to + 'T23:59:59'));
+    if (custId) bills = bills.filter(b => b.customerId === custId);
+    if (status) bills = bills.filter(b => b.status === status);
+
+    currentBills = bills;
+
+    // Totals
+    const total   = bills.reduce((s,b)=>s+b.totalAmount,0);
+    const paid    = bills.filter(b=>b.status==='paid').reduce((s,b)=>s+b.totalAmount,0);
+    const pending = bills.filter(b=>b.status==='pending').reduce((s,b)=>s+b.totalAmount,0);
+
+    document.getElementById('rptCount').textContent   = bills.length;
+    document.getElementById('rptTotal').textContent   = sym + total.toLocaleString('en-IN',{maximumFractionDigits:2});
+    document.getElementById('rptPaid').textContent    = sym + paid.toLocaleString('en-IN',{maximumFractionDigits:2});
+    document.getElementById('rptPending').textContent = sym + pending.toLocaleString('en-IN',{maximumFractionDigits:2});
+
+    // Table
+    const tbody = document.getElementById('reportTableBody');
+
+    if (bills.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state">
+        <span class="empty-icon">📊</span>
+        <p>No bills found for selected filters.</p>
+      </div></td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = bills.map(b => `
+      <tr class="fade-in">
+        <td><span style="font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--accent);">${b.billNo}</span></td>
+        <td>
+          <div style="font-weight:600;">${escReportHtml(b.customerName)}</div>
+          <div style="font-size:11px;color:var(--text-muted);">${b.customerPhone||''}</div>
+        </td>
+        <td style="font-size:12px;color:var(--text-secondary);">${formatDateTime(b.createdAt)}</td>
+        <td><span class="badge badge-blue">${b.items.length}</span></td>
+        <td style="font-size:12px;color:var(--text-secondary);">
+          ${sym}${b.subTotal.toLocaleString('en-IN',{maximumFractionDigits:2})}
+        </td>
+        <td style="font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--accent-3);">
+          ${sym}${b.totalAmount.toLocaleString('en-IN',{maximumFractionDigits:2})}
+        </td>
+        <td>
+          <select onchange="updateBillStatus('${b.id}',this.value)"
+            style="padding:5px 8px;font-size:12px;border-radius:6px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-primary);width:110px;">
+            <option value="paid"    ${b.status==='paid'   ?'selected':''}>✅ Paid</option>
+            <option value="pending" ${b.status==='pending'?'selected':''}>⏳ Pending</option>
+            <option value="partial" ${b.status==='partial'?'selected':''}>🔷 Partial</option>
+          </select>
+        </td>
+        <td>
+          <div style="display:flex;gap:6px;">
+            <button class="btn btn-sm btn-secondary" onclick="viewBillDetail('${b.id}')" title="View">👁️</button>
+            <button class="btn btn-sm btn-secondary" onclick="printBill('${b.id}')" title="Print">🖨️</button>
+            <button class="btn btn-sm btn-danger" onclick="deleteBillConfirm('${b.id}')" title="Delete">🗑️</button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  function escReportHtml(str) {
+    const d = document.createElement('div');
+    d.appendChild(document.createTextNode(str||''));
+    return d.innerHTML;
+  }
+
+  function updateBillStatus(id, status) {
+    Storage.updateBill(id, { status });
+    showToast('Bill status updated to ' + status, 'success');
+    loadReports();
+  }
+
+  function deleteBillConfirm(id) {
+    const b = Storage.getBillById(id);
+    if (!b) return;
+    confirmAction(`Delete bill ${b.billNo}? This cannot be undone.`, () => {
+      Storage.deleteBill(id);
+      showToast('Bill deleted', 'error');
+      loadReports();
+    });
+  }
+
+  function viewBillDetail(id) {
+    const bill = Storage.getBillById(id);
+    const settings = Storage.getSettings();
+    const sym = settings.currency || '₹';
+    if (!bill) return;
+
+    document.getElementById('billDetailTitle').textContent = `📄 ${bill.billNo} — ${bill.customerName}`;
+
+    const rows = bill.items.map((item, i) => `
+      <tr>
+        <td style="padding:9px 12px;">${i + 1}</td>
+        <td style="padding:9px 12px;color:var(--text-muted);font-size:12px;">${item.category || ''}</td>
+        <td style="padding:9px 12px;font-weight:600;">${item.itemName || item.type || ''}</td>
+        <td style="padding:9px 12px;font-family:'JetBrains Mono',monospace;">${sym}${(item.unitPrice || item.rate || 0).toLocaleString('en-IN')}</td>
+        <td style="padding:9px 12px;text-align:center;">${item.qty || 1}</td>
+        <td style="padding:9px 12px;font-weight:700;color:var(--accent-3);">${sym}${(item.subtotal || item.amount || 0).toLocaleString('en-IN', {maximumFractionDigits:2})}</td>
+      </tr>
+    `).join('');
+
+    const discount = bill.discount || 0;
+
+    document.getElementById('billDetailContent').innerHTML = `
+      <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px;font-size:13px;color:var(--text-secondary);">
+        <span>📅 ${formatDateTime(bill.createdAt)}</span>
+        <span>👤 ${bill.customerName}${bill.customerPhone ? ' · ' + bill.customerPhone : ''}</span>
+        <span>💳 ${bill.paymentMethod || 'Cash'}</span>
+        <span class="badge ${bill.status==='paid'?'badge-success':'badge-warning'}">${bill.status}</span>
+      </div>
+      <div class="table-wrap" style="margin-bottom:16px;">
+        <table>
+          <thead><tr>
+            <th>#</th><th>Category</th><th>Item Name</th><th>Unit Price</th><th>Qty</th><th>Subtotal</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+      <div class="total-section" style="max-width:300px;margin-left:auto;">
+        <div class="total-row"><span>Total Price</span><span>${sym}${bill.subTotal.toLocaleString('en-IN',{maximumFractionDigits:2})}</span></div>
+        ${bill.taxRate > 0 ? `<div class="total-row"><span>Tax (${bill.taxRate}%)</span><span>${sym}${bill.taxAmount.toLocaleString('en-IN',{maximumFractionDigits:2})}</span></div>` : ''}
+        ${discount > 0 ? `<div class="total-row"><span style="color:var(--warning);">Discount</span><span style="color:var(--warning);">-${sym}${discount.toLocaleString('en-IN',{maximumFractionDigits:2})}</span></div>` : ''}
+        <div class="total-row grand"><span>Final Price</span><span>${sym}${bill.totalAmount.toLocaleString('en-IN',{maximumFractionDigits:2})}</span></div>
+      </div>
+      ${bill.note ? `<div style="margin-top:14px;padding:12px;background:rgba(255,217,61,0.08);border-radius:8px;font-size:13px;color:var(--text-secondary);">📝 ${bill.note}</div>` : ''}
+      <div style="display:flex;gap:10px;margin-top:20px;">
+        <button class="btn btn-primary" onclick="printBill('${bill.id}')">🖨️ Print Invoice</button>
+        <button class="btn btn-secondary" onclick="closeModal('billDetailModal')">Close</button>
+      </div>
+    `;
+    openModal('billDetailModal');
+  }
+
+
+  function exportBillsCSV() {
+    const bills = currentBills.length > 0 ? currentBills : Storage.getBills();
+    const csv = 'Bill No,Customer,Phone,Date,Items,Subtotal,Tax,Total,Status\n' +
+      bills.map(b =>
+        `"${b.billNo}","${b.customerName}","${b.customerPhone||''}","${formatDate(b.createdAt)}",${b.items.length},${b.subTotal},${b.taxAmount},${b.totalAmount},"${b.status}"`
+      ).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'bills_report.csv'; a.click();
+    showToast('Report exported!', 'success');
+  }
+</script>
+</body>
+</html>

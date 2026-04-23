@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Invoice Format Editor — Indian CNC Carving</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    body { overflow: hidden; }
+
+    /* ── Page layout ── */
+    .edit-page { display:flex; flex-direction:column; height:calc(100vh - 62px); }
+
+    .edit-topbar {
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+      flex-wrap: wrap;
+    }
+
+    .edit-body {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* ── Left Panel ── */
+    .left-panel {
+      background: var(--bg-card);
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .panel-section { border-bottom: 1px solid var(--border); padding-bottom: 14px; }
+    .panel-label { font-size: 10px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 8px; }
+
+    /* Format toolbar */
+    .fmt-bar { display: flex; flex-wrap: wrap; gap: 4px; }
+    .fmt-btn {
+      width: 30px; height: 30px; border-radius: 6px;
+      background: var(--bg-secondary); border: 1px solid var(--border);
+      color: var(--text-primary); font-size: 13px; font-weight: 700;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s;
+    }
+    .fmt-btn:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .fmt-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .fmt-btn.wide { width: auto; padding: 0 10px; font-size: 11px; }
+    .fmt-sep { width: 1px; background: var(--border); height: 30px; margin: 0 2px; }
+
+    /* Color inputs */
+    .color-row { display: flex; gap: 8px; align-items: center; }
+    .color-row label { font-size: 12px; color: var(--text-secondary); flex: 1; }
+    .color-row input[type=color] {
+      width: 32px; height: 32px; border: none; border-radius: 6px;
+      cursor: pointer; padding: 2px; background: var(--bg-secondary);
+    }
+
+    .prop-field { margin-bottom: 8px; }
+    .prop-field label { display:block; font-size:11px; color:var(--text-muted); margin-bottom:3px; }
+    .prop-field input, .prop-field select {
+      width: 100%; padding: 5px 8px; font-size: 12px;
+      background: var(--bg-secondary); border: 1px solid var(--border);
+      border-radius: 6px; color: var(--text-primary);
+    }
+
+    /* Variable chips */
+    .var-palette { display: flex; flex-wrap: wrap; gap: 4px; }
+    .var-tag {
+      font-size: 10px; padding: 3px 8px; border-radius: 10px;
+      background: rgba(79,158,255,0.15); color: var(--accent);
+      border: 1px solid rgba(79,158,255,0.35); cursor: pointer;
+      font-weight: 600; transition: all 0.15s;
+    }
+    .var-tag:hover { background: var(--accent); color: #fff; }
+
+    /* ── Paper container ── */
+    .paper-container {
+      background: #23233a;
+      overflow: auto;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 30px 20px;
+    }
+
+    /* A5 paper */
+    .paper-a5 {
+      width: 559px;
+      min-height: 794px;
+      background: #fff;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+      color: #111;
+      font-family: Arial, sans-serif;
+      font-size: 11px;
+      flex-shrink: 0;
+    }
+
+    /* Editable cells */
+    .ec {
+      outline: none;
+      min-height: 14px;
+      cursor: text;
+    }
+    .ec:hover { background: rgba(79,158,255,0.08) !important; }
+    .ec:focus {
+      background: rgba(79,158,255,0.12) !important;
+      box-shadow: inset 0 0 0 2px #4f9eff;
+    }
+
+    /* Non-editable placeholder */
+    .data-chip {
+      display: inline-block;
+      background: #1a56db;
+      color: #fff;
+      padding: 1px 7px;
+      border-radius: 10px;
+      font-size: 9px;
+      font-weight: 700;
+      white-space: nowrap;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    /* Invoice table */
+    .inv-tbl { width: 100%; border-collapse: collapse; }
+    .inv-tbl td, .inv-tbl th { border: 1px solid #bbb; }
+
+    /* Totals control row */
+    .totals-ctrl {
+      display: flex; gap: 6px; align-items: center;
+      padding: 6px 10px;
+      background: rgba(79,158,255,0.06);
+      border: 1px dashed var(--accent);
+      border-radius: 6px;
+      margin-top: 8px;
+    }
+    .totals-ctrl input {
+      flex: 1; padding: 4px 8px; font-size: 12px;
+      background: var(--bg-secondary); border: 1px solid var(--border);
+      border-radius: 6px; color: var(--text-primary);
+    }
+    .totals-ctrl button {
+      padding: 4px 10px; font-size: 11px; border-radius: 6px; cursor: pointer; border: none;
+    }
+
+    .selected-info {
+      font-size: 11px; color: var(--text-muted); font-style: italic;
+      padding: 6px; background: rgba(79,158,255,0.05); border-radius: 6px;
+      text-align: center;
+    }
+
+    .zoom-bar { display:flex; align-items:center; gap:8px; }
+    .zoom-bar input { width: 60px; }
+
+    @media (max-width: 900px) {
+      .edit-body { grid-template-columns: 1fr; }
+      .left-panel { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="settings.html" class="navbar-brand">
+    <div class="brand-icon">⚙️</div>
+    <div>
+      <div class="brand-name">Indian CNC Carving</div>
+      <span class="brand-sub">Invoice Format Editor</span>
+    </div>
+  </a>
+  <ul class="nav-links">
+    <li><a href="index.html">🏠 Dashboard</a></li>
+    <li><a href="create-bill.html">🧾 New Bill</a></li>
+    <li><a href="settings.html">⚙️ Settings</a></li>
+  </ul>
+  <div id="navClock" class="nav-date"></div>
+</nav>
+
+<div class="edit-page">
+
+  <!-- ── Top Bar ── -->
+  <div class="edit-topbar">
+    <a href="settings.html" class="btn btn-secondary btn-sm">← Back</a>
+    <span style="font-weight:700;color:var(--text-primary);font-size:14px;">📄 Invoice Format Editor</span>
+    <div style="flex:1;"></div>
+    <button class="btn btn-ghost btn-sm" onclick="previewInvoice()">👁️ Preview</button>
+    <button class="btn btn-secondary btn-sm" onclick="resetTemplate()">↺ Reset Default</button>
+    <button class="btn btn-primary btn-sm" onclick="saveTemplate()">💾 Save Template</button>
+  </div>
+
+  <div class="edit-body">
+
+    <!-- ── LEFT PANEL ── -->
+    <div class="left-panel">
+
+      <!-- Format toolbar -->
+      <div class="panel-section">
+        <div class="panel-label">✏️ Text Formatting</div>
+        <div class="fmt-bar">
+          <button class="fmt-btn" id="btnBold" title="Bold" onclick="applyFmt('bold')"><b>B</b></button>
+          <button class="fmt-btn" id="btnItalic" title="Italic" onclick="applyFmt('italic')"><i>I</i></button>
+          <button class="fmt-btn" id="btnUnderline" title="Underline" onclick="applyFmt('underline')"><u>U</u></button>
+          <div class="fmt-sep"></div>
+          <button class="fmt-btn" title="Align Left"   onclick="applyFmt('justifyLeft')">⬅</button>
+          <button class="fmt-btn" title="Align Center" onclick="applyFmt('justifyCenter')">☰</button>
+          <button class="fmt-btn" title="Align Right"  onclick="applyFmt('justifyRight')">➡</button>
+        </div>
+        <div style="margin-top:8px;" class="prop-field">
+          <label>Font Size (px)</label>
+          <input type="number" id="fmtSize" value="11" min="7" max="36" step="1"
+                 onchange="applyFmt('fontSize',this.value)">
+        </div>
+        <div class="color-row" style="margin-top:6px;">
+          <label>Text Color</label>
+          <input type="color" id="fmtColor" value="#111111" oninput="applyFmt('foreColor',this.value)">
+        </div>
+        <div class="color-row" style="margin-top:6px;">
+          <label>Cell BG Color</label>
+          <input type="color" id="fmtBg" value="#ffffff" oninput="setCellBg(this.value)">
+        </div>
+      </div>
+
+      <!-- Variables -->
+      <div class="panel-section">
+        <div class="panel-label">🏷️ Insert Variable</div>
+        <p style="font-size:11px;color:var(--text-muted);margin-bottom:8px;">Click to insert at cursor inside an editable cell</p>
+        <div class="var-palette">
+          <span class="var-tag" onclick="insertVar('{{customerName}}')">Customer Name</span>
+          <span class="var-tag" onclick="insertVar('{{customerPhone}}')">Phone</span>
+          <span class="var-tag" onclick="insertVar('{{billNo}}')">Bill No</span>
+          <span class="var-tag" onclick="insertVar('{{billDate}}')">Date</span>
+          <span class="var-tag" onclick="insertVar('{{subTotal}}')">Total Price</span>
+          <span class="var-tag" onclick="insertVar('{{discount}}')">Discount</span>
+          <span class="var-tag" onclick="insertVar('{{finalPrice}}')">Final Price</span>
+          <span class="var-tag" onclick="insertVar('{{paymentMethod}}')">Payment Method</span>
+        </div>
+      </div>
+
+      <!-- Table header color -->
+      <div class="panel-section">
+        <div class="panel-label">🎨 Table Settings</div>
+        <div class="color-row">
+          <label>Header Row BG</label>
+          <input type="color" id="tblHeaderBg" value="#ffe066" oninput="applyHeaderBg(this.value)">
+        </div>
+        <div class="color-row" style="margin-top:6px;">
+          <label>Header Text</label>
+          <input type="color" id="tblHeaderFg" value="#111111" oninput="applyHeaderFg(this.value)">
+        </div>
+        <div class="prop-field" style="margin-top:8px;">
+          <label>Empty Padding Rows</label>
+          <input type="number" id="minRows" value="8" min="2" max="20"
+                 onchange="applyMinRows(this.value)">
+        </div>
+      </div>
+
+      <!-- Totals rows manager -->
+      <div class="panel-section">
+        <div class="panel-label">📊 Totals Rows</div>
+        <p style="font-size:11px;color:var(--text-muted);margin-bottom:8px;">Edit labels directly in the paper. Add/remove rows below.</p>
+        <button class="btn btn-secondary btn-sm btn-full" onclick="addTotalsRow()">➕ Add Totals Row</button>
+      </div>
+
+      <!-- Selected cell info -->
+      <div>
+        <div class="panel-label">🔍 Selected Cell</div>
+        <div class="selected-info" id="selInfo">Click any white cell to edit</div>
+      </div>
+
+      <!-- Zoom -->
+      <div>
+        <div class="panel-label">🔭 Zoom</div>
+        <div class="zoom-bar">
+          <input type="range" min="50" max="130" value="100" id="zoomRange"
+                 oninput="setZoom(this.value)" style="flex:1;">
+          <span id="zoomLabel" style="font-size:11px;color:var(--text-secondary);min-width:36px;">100%</span>
+        </div>
+      </div>
+
+    </div><!-- /left-panel -->
+
+    <!-- ── PAPER ── -->
+    <div class="paper-container" id="paperContainer">
+      <div style="transform-origin: top center;" id="paperWrap">
+        <div class="paper-a5" id="invoicePaper">
+          <!-- rendered by JS -->
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /edit-body -->
+</div><!-- /edit-page -->
+
+<script src="js/storage.js"></script>
+<script src="js/app.js"></script>
+<script>
+// ===================== DEFAULT TEMPLATE =====================
+const DEFAULT_TPL = {
+  header: {
+    title: 'INDIAN CNC CARVING',
+    subtitle: 'INVOICE',
+    titleStyle: 'font-size:18px;font-weight:900;letter-spacing:5px;text-align:center;',
+    subtitleStyle: 'font-size:11px;font-weight:700;letter-spacing:3px;text-align:center;',
+    outerBorder: '2px solid #111',
+    titleBg: '#ffffff',
+    subtitleBg: '#ffffff'
+  },
+  billInfo: {
+    col1r1: 'Bill to :',
+    col1r2: 'Contact no :',
+    col2r1: 'Invoice no :',
+    col2r2: 'Invoice date :',
+    border: '1px solid #ccc',
+    padding: '6px 10px'
+  },
+  table: {
+    headerBg: '#ffe066',
+    headerFg: '#111111',
+    border: '1px solid #bbb',
+    minRows: 8,
+    rowPadding: '6px 8px',
+    columns: [
+      { header: 'S:NO',          width: '38',  align: 'center', key: 'index' },
+      { header: 'Description',   width: 'auto',align: 'center', key: 'itemName' },
+      { header: 'Unit price',    width: '78',  align: 'center', key: 'unitPrice' },
+      { header: 'Qty',           width: '44',  align: 'center', key: 'qty' },
+      { header: 'Subtotal price',width: '84',  align: 'center', key: 'subtotal' }
+    ]
+  },
+  totals: {
+    leftPct: 55,
+    border: '1px solid #bbb',
+    rows: [
+      { label: 'Total Price :',    key: 'subTotal',       bold: false, fontSize: 11 },
+      { label: 'Discount Price :', key: 'discount',       bold: false, fontSize: 11 },
+      { label: 'Final Price :',    key: 'finalPrice',     bold: true,  fontSize: 13 },
+      { label: 'Payment Method :', key: 'paymentMethod',  bold: false, fontSize: 11 }
+    ]
+  },
+  footer: {
+    companyStyle: 'font-size:13px;font-weight:800;',
+    infoStyle: 'font-size:11px;line-height:1.8;color:#333;',
+    border: '1px solid #111',
+    scanText: 'SCAN & PAY',
+    qrWidth: 85
+  }
+};
+
+// Working copy of template
+let tpl = {};
+let lastFocused = null;   // Last focused editable cell element
+
+// ===================== INIT =====================
+document.addEventListener('DOMContentLoaded', () => {
+  const saved = Storage.getInvoiceTemplate();
+  tpl = saved ? JSON.parse(JSON.stringify(saved)) : JSON.parse(JSON.stringify(DEFAULT_TPL));
+  // Sync settings panel inputs from template
+  syncPanelFromTpl();
+  render();
+});
+
+function syncPanelFromTpl() {
+  document.getElementById('tblHeaderBg').value = tpl.table.headerBg;
+  document.getElementById('tblHeaderFg').value = tpl.table.headerFg;
+  document.getElementById('minRows').value      = tpl.table.minRows;
+}
+
+// ===================== RENDER =====================
+function render() {
+  const paper = document.getElementById('invoicePaper');
+  paper.innerHTML = buildEditorHTML();
+  attachEditorEvents();
+}
+
+function chip(varName) {
+  return '<span class="data-chip">' + varName + '</span>';
+}
+
+function buildEditorHTML() {
+  const h = tpl.header;
+  const bi = tpl.billInfo;
+  const tb = tpl.table;
+  const tt = tpl.totals;
+  const ft = tpl.footer;
+
+  const cnCols = tb.columns.length;
+
+  // ── Header
+  let html = '<table class="inv-tbl" style="width:100%;border-collapse:collapse;">';
+
+  // Title row
+  html += `<tr><td colspan="${cnCols}" style="border:${h.outerBorder};text-align:center;padding:8px 0 2px;background:${h.titleBg};">
+    <div class="ec" contenteditable="true" data-key="header.title" style="${h.titleStyle}">${h.title}</div>
+  </td></tr>`;
+
+  // Subtitle row
+  html += `<tr><td colspan="${cnCols}" style="border:${h.outerBorder};border-top:1px solid #111;text-align:center;padding:4px 0;background:${h.subtitleBg};">
+    <div class="ec" contenteditable="true" data-key="header.subtitle" style="${h.subtitleStyle}">${h.subtitle}</div>
+  </td></tr>`;
+
+  // Bill info — 2 rows x 2 cols (each spanning ~half columns)
+  const half = Math.floor(cnCols / 2);
+  const rest = cnCols - half;
+  html += `<tr>
+    <td colspan="${half}" style="padding:${bi.padding};border-right:${bi.border};border-bottom:${bi.border};border-left:1px solid #111;border-top:1px solid #111;">
+      <span class="ec" contenteditable="true" data-key="billInfo.col1r1" style="font-weight:700;">${bi.col1r1}</span>&nbsp;${chip('{{customerName}}')}
+    </td>
+    <td colspan="${rest}" style="padding:${bi.padding};border:1px solid #111;">
+      <span class="ec" contenteditable="true" data-key="billInfo.col2r1" style="font-weight:700;">${bi.col2r1}</span>&nbsp;&nbsp;${chip('{{billNo}}')}
+    </td>
+  </tr>`;
+  html += `<tr>
+    <td colspan="${half}" style="padding:${bi.padding};border-left:1px solid #111;border-right:${bi.border};border-bottom:${bi.border};">
+      <span class="ec" contenteditable="true" data-key="billInfo.col1r2" style="font-weight:700;">${bi.col1r2}</span>&nbsp;${chip('{{customerPhone}}')}
+    </td>
+    <td colspan="${rest}" style="padding:${bi.padding};border-bottom:${bi.border};border-right:1px solid #111;">
+      <span class="ec" contenteditable="true" data-key="billInfo.col2r2" style="font-weight:700;">${bi.col2r2}</span>&nbsp;${chip('{{billDate}}')}
+    </td>
+  </tr>`;
+
+  // Column headers
+  html += '<tr style="background:' + tb.headerBg + ';color:' + tb.headerFg + ';" id="tblHeaderRow">';
+  tb.columns.forEach((col, ci) => {
+    const w = col.width && col.width !== 'auto' ? `width:${parseInt(col.width)}px;` : '';
+    html += `<th style="${w}padding:${tb.rowPadding};border:${tb.border};text-align:${col.align || 'center'};">
+      <div class="ec" contenteditable="true" data-key="table.columns.${ci}.header">${col.header}</div>
+    </th>`;
+  });
+  html += '</tr>';
+
+  // Sample item rows (not editable — auto-generated from bill data)
+  for (let i = 0; i < 3; i++) {
+    html += `<tr style="opacity:0.35;">`;
+    tb.columns.forEach((col) => {
+      let val = '';
+      if (col.key === 'index') val = (i + 1);
+      else if (col.key === 'itemName') val = ['Single Door','Jannel Set','Bero Door'][i];
+      else if (col.key === 'unitPrice') val = [4500,2800,1500][i];
+      else if (col.key === 'qty') val = 1;
+      else if (col.key === 'subtotal') val = [4500,2800,1500][i];
+      html += `<td style="padding:${tb.rowPadding};border:${tb.border};text-align:center;">${val}</td>`;
+    });
+    html += '</tr>';
+  }
+
+  // Empty padding rows
+  for (let i = 0; i < Math.max(0, tb.minRows - 3); i++) {
+    html += `<tr>`;
+    tb.columns.forEach(() => {
+      html += `<td style="padding:${tb.rowPadding};border:${tb.border};height:22px;">&nbsp;</td>`;
+    });
+    html += '</tr>';
+  }
+
+  // "Item rows" note row
+  html += `<tr><td colspan="${cnCols}" style="padding:4px 8px;background:#f5f5f5;border:1px solid #ddd;text-align:center;font-size:9px;color:#999;font-style:italic;">
+    ↕ Item rows are auto-generated from bill data (${tb.minRows} empty rows shown)
+  </td></tr>`;
+
+  // Totals
+  const leftPct = tt.leftPct;
+  tt.rows.forEach((row, ri) => {
+    const boldStyle = row.bold ? 'font-weight:800;font-size:' + row.fontSize + 'px;' : 'font-size:' + row.fontSize + 'px;';
+    html += `<tr data-totals-idx="${ri}">
+      ${ri === 0 ? `<td rowspan="${tt.rows.length}" style="width:${leftPct}%;border:${tt.border};border-top:none;padding:4px;"></td>` : ''}
+      <td style="padding:5px 10px;border:${tt.border};border-top:none;text-align:right;font-weight:600;white-space:nowrap;">
+        <span class="ec" contenteditable="true" data-key="totals.rows.${ri}.label">${row.label}</span>
+      </td>
+      <td style="padding:5px 10px;border:${tt.border};border-top:none;text-align:right;${boldStyle}">
+        ${chip('{{' + row.key + '}}')}&nbsp;
+        <button onclick="removeTotalsRow(${ri})" title="Remove row"
+          style="background:#ef4444;color:#fff;border:none;border-radius:4px;padding:1px 5px;
+          font-size:9px;cursor:pointer;margin-left:4px;opacity:0.7;" title="Remove row">✕</button>
+      </td>
+    </tr>`;
+  });
+
+  // Footer
+  html += `<tr>
+    <td colspan="${cnCols - 1}" style="padding:10px 12px;vertical-align:top;border:1px solid #111;border-top:none;">
+      <div class="ec" contenteditable="true" data-key="footer.companyName"
+           style="${ft.companyStyle}">INDIAN CNC CARVING</div>
+      <div class="ec" contenteditable="true" data-key="footer.addressLine"
+           style="${ft.infoStyle};margin-top:6px;">45, French Teacher St,<br>Karaikal, Puducherry 609602<br>Mobile : 8870415956 &amp; 9786876576<br>Website : https://indiancnccarving.com/</div>
+    </td>
+    <td style="padding:10px 14px;border-left:1px solid #ccc;border-bottom:1px solid #111;border-right:1px solid #111;border-top:none;text-align:center;vertical-align:middle;width:110px;">
+      <div style="font-size:11px;font-weight:700;margin-bottom:5px;">
+        <span class="ec" contenteditable="true" data-key="footer.scanText">${ft.scanText}</span>
+      </div>
+      <div style="width:85px;height:85px;border:2px dashed #aaa;display:inline-flex;align-items:center;
+           justify-content:center;font-size:9px;color:#999;text-align:center;line-height:1.5;">
+        QR uploads<br>in Settings
+      </div>
+    </td>
+  </tr>`;
+
+  html += '</table>';
+  return html;
+}
+
+// ===================== EVENTS =====================
+function attachEditorEvents() {
+  const cells = document.querySelectorAll('.ec');
+  cells.forEach(cell => {
+    cell.addEventListener('focus', () => {
+      lastFocused = cell;
+      const key = cell.dataset.key || '';
+      document.getElementById('selInfo').textContent = '✏️ Editing: ' + key;
+      // Sync toolbar from current styles
+      const cs = window.getComputedStyle(cell);
+      document.getElementById('fmtSize').value = parseInt(cs.fontSize) || 11;
+      document.getElementById('fmtColor').value = rgbToHex(cs.color) || '#111111';
+      document.getElementById('fmtBg').value = rgbToHex(cs.backgroundColor) || '#ffffff';
+    });
+    cell.addEventListener('blur', () => {
+      const key = cell.dataset.key || '';
+      setNestedKey(tpl, key, cell.innerHTML || cell.textContent);
+      document.getElementById('selInfo').textContent = '✅ Saved: ' + key;
+    });
+    cell.addEventListener('keydown', e => {
+      if (e.key === 'Escape') { cell.blur(); }
+    });
+  });
+}
+
+function setNestedKey(obj, keyPath, value) {
+  const parts = keyPath.split('.');
+  let cur = obj;
+  for (let i = 0; i < parts.length - 1; i++) {
+    const p = parts[i];
+    const nextIsNum = !isNaN(parseInt(parts[i+1]));
+    if (!(p in cur)) cur[p] = nextIsNum ? [] : {};
+    cur = cur[p];
+  }
+  cur[parts[parts.length - 1]] = value;
+}
+
+// ===================== FORMATTING =====================
+function applyFmt(cmd, value) {
+  if (cmd === 'fontSize') {
+    document.execCommand('fontSize', false, '7');
+    document.querySelectorAll('font[size="7"]').forEach(el => {
+      el.removeAttribute('size');
+      el.style.fontSize = value + 'px';
+    });
+  } else {
+    document.execCommand(cmd, false, value || null);
+  }
+}
+
+function setCellBg(color) {
+  if (!lastFocused) return;
+  const td = lastFocused.closest('td') || lastFocused.closest('th');
+  if (td) td.style.backgroundColor = color;
+  else lastFocused.style.backgroundColor = color;
+}
+
+function applyHeaderBg(color) {
+  tpl.table.headerBg = color;
+  const row = document.getElementById('tblHeaderRow');
+  if (row) row.style.background = color;
+}
+
+function applyHeaderFg(color) {
+  tpl.table.headerFg = color;
+  const row = document.getElementById('tblHeaderRow');
+  if (row) row.style.color = color;
+}
+
+function applyMinRows(val) {
+  tpl.table.minRows = parseInt(val) || 8;
+  render();
+  syncPanelFromTpl();
+}
+
+// ===================== TOTALS ROWS =====================
+function addTotalsRow() {
+  const label = prompt('Enter label for new totals row:', 'Custom Row :');
+  if (!label) return;
+  const key = prompt('Variable key (subTotal / discount / finalPrice / paymentMethod):', 'subTotal');
+  if (!key) return;
+  tpl.totals.rows.push({ label: label, key: key, bold: false, fontSize: 11 });
+  render();
+  syncPanelFromTpl();
+}
+
+function removeTotalsRow(idx) {
+  if (tpl.totals.rows.length <= 1) { alert('At least one totals row required.'); return; }
+  tpl.totals.rows.splice(idx, 1);
+  render();
+  syncPanelFromTpl();
+}
+
+// ===================== SAVE / RESET / PREVIEW =====================
+function saveTemplate() {
+  // Sync inline-edited values from DOM before saving
+  document.querySelectorAll('.ec').forEach(cell => {
+    const key = cell.dataset.key;
+    if (key) setNestedKey(tpl, key, cell.innerHTML || cell.textContent);
+  });
+  // Sync panel inputs
+  tpl.table.headerBg = document.getElementById('tblHeaderBg').value;
+  tpl.table.headerFg = document.getElementById('tblHeaderFg').value;
+  tpl.table.minRows  = parseInt(document.getElementById('minRows').value) || 8;
+
+  Storage.saveInvoiceTemplate(tpl);
+  showToast('✅ Invoice template saved! All future bills will use this format.', 'success');
+}
+
+function resetTemplate() {
+  if (!confirm('Reset to default invoice format? This will undo all custom changes.')) return;
+  Storage.resetInvoiceTemplate();
+  tpl = JSON.parse(JSON.stringify(DEFAULT_TPL));
+  syncPanelFromTpl();
+  render();
+  showToast('Invoice format reset to default.', 'warning');
+}
+
+function previewInvoice() {
+  // Build a fake bill with sample data
+  const settings = Storage.getSettings();
+  const sampleBill = {
+    billNo: 'ICC-0327-001',
+    createdAt: new Date().toISOString(),
+    customerName: 'Sample Customer',
+    customerPhone: '9876543210',
+    items: [
+      { itemName: 'Mayil Door',            unitPrice: 6000, qty: 1, subtotal: 6000 },
+      { itemName: 'Vasamalai Side',        unitPrice: 3000, qty: 1, subtotal: 3000 },
+      { itemName: 'VM Top',                unitPrice: 1500, qty: 1, subtotal: 1500 },
+      { itemName: 'Gajalakshmi Ventilator',unitPrice: 3500, qty: 1, subtotal: 3500 },
+      { itemName: 'Double Door Frame',     unitPrice: 1000, qty: 2, subtotal: 2000 }
+    ],
+    subTotal: 17500,
+    taxRate: 0,
+    taxAmount: 0,
+    discount: 0,
+    finalPrice: 17500,
+    totalAmount: 17500,
+    paymentMethod: 'Cash',
+    note: '',
+    status: 'paid'
+  };
+
+  // Save current state first
+  saveTemplate();
+
+  // Open the billing module's printBill equivalent but using the editor template
+  const win = window.open('', '_blank', 'width=640,height=900');
+  win.document.write(
+    '<!DOCTYPE html><html><head><meta charset="UTF-8">' +
+    '<title>Invoice Preview — ' + sampleBill.billNo + '</title>' +
+    '<style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:Arial,sans-serif;background:#fff;color:#111;font-size:12px;}' +
+    '@page{size:A5 portrait;margin:5mm;}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}</style>' +
+    '</head><body>' +
+    buildPrintInvoice(sampleBill, settings, tpl) +
+    '<div style="text-align:center;padding:12px;font-size:11px;color:#888;border-top:1px dashed #ccc;margin-top:10px;">Preview — <a href="#" onclick="window.print();return false;">🖨️ Print</a></div>' +
+    '</body></html>'
+  );
+  win.document.close();
+}
+
+// Build a real print invoice using the current template values
+function buildPrintInvoice(bill, settings, t) {
+  const d = new Date(bill.createdAt);
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const billDate = String(d.getDate()).padStart(2,'0') + '.' + months[d.getMonth()] + '.' + d.getFullYear();
+
+  // Resolve footer text from template DOM (it may have been edited in-place)
+  const footerEl = document.querySelector('[data-key="footer.addressLine"]');
+  const footerAddrHtml = footerEl ? footerEl.innerHTML
+    : ((settings.companyAddress || '').replace(/\n/g,'<br>') +
+       '<br>Mobile : ' + settings.companyPhone +
+       (settings.companyPhone2 ? ' &amp; ' + settings.companyPhone2 : '') +
+       (settings.website ? '<br>Website : ' + settings.website : ''));
+
+  const footerNameEl = document.querySelector('[data-key="footer.companyName"]');
+  const companyName = footerNameEl ? footerNameEl.textContent.trim() : settings.companyName;
+
+  const scanEl = document.querySelector('[data-key="footer.scanText"]');
+  const scanText = scanEl ? scanEl.textContent.trim() : 'SCAN & PAY';
+
+  // Column headers from template
+  const cols = t.table.columns;
+
+  // Item rows
+  const itemRows = bill.items.map((item, i) => {
+    return '<tr>' +
+      cols.map(col => {
+        let val = '';
+        if (col.key === 'index') val = i + 1;
+        else if (col.key === 'itemName') val = item.itemName || '';
+        else if (col.key === 'unitPrice') val = (item.unitPrice || 0).toLocaleString('en-IN');
+        else if (col.key === 'qty') val = item.qty || 1;
+        else if (col.key === 'subtotal') val = (item.subtotal || 0).toLocaleString('en-IN');
+        return '<td style="padding:6px 8px;border:1px solid #bbb;text-align:' + (col.align||'center') + ';font-weight:' + (col.key==='itemName'?'600':'normal') + ';">' + val + '</td>';
+      }).join('') +
+    '</tr>';
+  }).join('');
+
+  // Empty rows
+  let emptyRows = '';
+  for (let i = bill.items.length; i < (t.table.minRows || 8); i++) {
+    emptyRows += '<tr>' + cols.map(() => '<td style="padding:6px 8px;border:1px solid #bbb;height:22px;">&nbsp;</td>').join('') + '</tr>';
+  }
+
+  // Get bill info labels from template DOM
+  function getLabel(key, fallback) {
+    const el = document.querySelector('[data-key="' + key + '"]');
+    return el ? el.textContent.trim() : fallback;
+  }
+
+  const headerTitle    = getLabel('header.title', 'INDIAN CNC CARVING');
+  const headerSubtitle = getLabel('header.subtitle', 'INVOICE');
+  const col1r1 = getLabel('billInfo.col1r1', 'Bill to :');
+  const col1r2 = getLabel('billInfo.col1r2', 'Contact no :');
+  const col2r1 = getLabel('billInfo.col2r1', 'Invoice no :');
+  const col2r2 = getLabel('billInfo.col2r2', 'Invoice date :');
+
+  const half = Math.floor(cols.length / 2);
+  const rest = cols.length - half;
+  const discount = bill.discount || 0;
+  const leftPct  = t.totals.leftPct || 55;
+
+  // Totals rows
+  const totalsRowsHtml = t.totals.rows.map((row, ri) => {
+    let val = '';
+    if (row.key === 'subTotal') val = bill.subTotal.toLocaleString('en-IN');
+    else if (row.key === 'discount') val = discount.toLocaleString('en-IN');
+    else if (row.key === 'finalPrice') val = bill.totalAmount.toLocaleString('en-IN');
+    else if (row.key === 'paymentMethod') val = bill.paymentMethod || 'Cash';
+    else val = '—';
+
+    const boldStyle = row.bold ? 'font-weight:800;font-size:' + row.fontSize + 'px;' : 'font-size:' + row.fontSize + 'px;';
+    return '<tr>' +
+      (ri === 0 ? `<td rowspan="${t.totals.rows.length}" style="width:${leftPct}%;border:1px solid #bbb;border-top:none;padding:4px;"></td>` : '') +
+      '<td style="padding:5px 10px;border:1px solid #bbb;border-top:none;text-align:right;font-weight:600;white-space:nowrap;">' + getLabel('totals.rows.' + ri + '.label', row.label) + '</td>' +
+      '<td style="padding:5px 10px;border:1px solid #bbb;border-top:none;text-align:right;' + boldStyle + '">' + val + '</td>' +
+    '</tr>';
+  }).join('');
+
+  return '<div style="width:148mm;margin:0 auto;font-size:11px;">' +
+
+    // Header
+    '<div style="border:2px solid #111;text-align:center;padding:8px 0 5px;">' +
+      '<div style="' + t.header.titleStyle + '">' + headerTitle + '</div>' +
+      '<div style="' + t.header.subtitleStyle + ';border-top:1px solid #111;padding-top:4px;margin-top:3px;">' + headerSubtitle + '</div>' +
+    '</div>' +
+
+    // Bill info
+    '<table style="width:100%;border-collapse:collapse;border:1px solid #111;border-top:none;font-size:11px;"><tr>' +
+      '<td colspan="' + half + '" style="padding:6px 10px;border-right:1px solid #ccc;">' +
+        '<b>' + col1r1 + '</b> ' + bill.customerName + '<br>' +
+        '<b>' + col1r2 + '</b> ' + (bill.customerPhone || '0') +
+      '</td>' +
+      '<td colspan="' + rest + '" style="padding:6px 10px;">' +
+        '<b>' + col2r1 + '</b>&nbsp;&nbsp;' + bill.billNo + '<br>' +
+        '<b>' + col2r2 + '</b> ' + billDate +
+      '</td>' +
+    '</tr></table>' +
+
+    // Items table
+    '<table style="width:100%;border-collapse:collapse;font-size:11px;"><thead>' +
+      '<tr style="background:' + t.table.headerBg + ';color:' + t.table.headerFg + ';">' +
+        cols.map(col => {
+          const w = col.width && col.width !== 'auto' ? 'width:' + parseInt(col.width) + 'px;' : '';
+          return '<th style="' + w + 'padding:' + t.table.rowPadding + ';border:' + t.table.border + ';text-align:' + (col.align||'center') + ';">' + getLabel('table.columns.' + cols.indexOf(col) + '.header', col.header) + '</th>';
+        }).join('') +
+      '</tr>' +
+    '</thead><tbody>' + itemRows + emptyRows + '</tbody></table>' +
+
+    // Totals
+    '<table style="width:100%;border-collapse:collapse;font-size:11px;">' + totalsRowsHtml + '</table>' +
+
+    // Footer
+    '<table style="width:100%;border-collapse:collapse;border:1px solid #111;border-top:none;"><tr>' +
+      '<td style="padding:10px 12px;vertical-align:top;">' +
+        '<div style="' + t.footer.companyStyle + '">' + companyName.toUpperCase() + '</div>' +
+        '<div style="margin-top:6px;">' + footerAddrHtml + '</div>' +
+      '</td>' +
+      '<td style="padding:10px 14px;border-left:1px solid #ccc;text-align:center;vertical-align:middle;width:110px;">' +
+        '<div style="font-size:11px;font-weight:700;margin-bottom:5px;">' + scanText + '</div>' +
+        (settings.qrCode
+          ? '<img src="' + settings.qrCode + '" style="width:85px;height:85px;object-fit:contain;">'
+          : '<div style="width:85px;height:85px;border:2px dashed #aaa;display:inline-flex;align-items:center;justify-content:center;font-size:9px;color:#999;text-align:center;line-height:1.4;">QR Code<br>Upload in<br>Settings</div>'
+        ) +
+      '</td>' +
+    '</tr></table>' +
+
+  '</div>';
+}
+
+// ===================== ZOOM =====================
+function setZoom(val) {
+  document.getElementById('paperWrap').style.transform = 'scale(' + (val / 100) + ')';
+  document.getElementById('zoomLabel').textContent = val + '%';
+}
+
+// ===================== INSERT VARIABLE =====================
+function insertVar(varStr) {
+  if (!lastFocused) { showToast('Click inside a cell first, then insert variable', 'warning'); return; }
+  lastFocused.focus();
+  document.execCommand('insertText', false, varStr);
+}
+
+// ===================== UTIL =====================
+function rgbToHex(rgb) {
+  if (!rgb || rgb === 'transparent' || rgb === 'rgba(0, 0, 0, 0)') return '#ffffff';
+  const m = rgb.match(/\d+/g);
+  if (!m || m.length < 3) return '#111111';
+  return '#' + m.slice(0,3).map(n => parseInt(n).toString(16).padStart(2,'0')).join('');
+}
+</script>
+</body>
+</html>

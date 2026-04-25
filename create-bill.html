@@ -28,25 +28,7 @@
     }
   </style>
 </head>
-<body>
-
-<nav class="navbar">
-  <a href="index.html" class="navbar-brand">
-    <div class="brand-icon">⚙️</div>
-    <div>
-      <div class="brand-name">Indian CNC Carving</div>
-      <span class="brand-sub">Billing System</span>
-    </div>
-  </a>
-  <ul class="nav-links" id="navLinks">
-    <li><a href="index.html"><span class="nav-icon">🏠</span> <span class="nav-text">Dashboard</span></a></li>
-    <li><a href="create-bill.html" class="active"><span class="nav-icon">🧾</span> <span class="nav-text">New Bill</span></a></li>
-    <li><a href="customers.html"><span class="nav-icon">👥</span> <span class="nav-text">Customers</span></a></li>
-    <li><a href="reports.html"><span class="nav-icon">📊</span> <span class="nav-text">Reports</span></a></li>
-    <li><a href="settings.html"><span class="nav-icon">⚙️</span> <span class="nav-text">Settings</span></a></li>
-  </ul>
-  <div id="navClock" class="nav-date">Loading…</div>
-</nav>
+<body class="no-sidebar">
 
 <div class="container">
 
@@ -56,7 +38,9 @@
       <h1 class="page-title">Create New Bill</h1>
       <p class="page-subtitle">Select items → set unit price & quantity → save invoice.</p>
     </div>
-    <a href="index.html" class="btn btn-secondary">← Back</a>
+    <div style="display:flex; gap:12px; align-items:center;">
+      <a href="index.html" class="btn btn-secondary btn-icon" title="Back to Home" style="font-size:20px; padding:8px 12px; border-radius:50%;">🏠</a>
+    </div>
   </div>
 
   <div class="bill-layout">

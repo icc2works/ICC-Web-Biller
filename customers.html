@@ -7,25 +7,7 @@
   <meta name="description" content="Manage your CNC customer database — add, edit, and view billing history.">
   <link rel="stylesheet" href="css/style.css">
 </head>
-<body>
-
-<nav class="navbar">
-  <a href="index.html" class="navbar-brand">
-    <div class="brand-icon">⚙️</div>
-    <div>
-      <div class="brand-name">Indian CNC Carving</div>
-      <span class="brand-sub">Billing System</span>
-    </div>
-  </a>
-  <ul class="nav-links" id="navLinks">
-    <li><a href="index.html"><span class="nav-icon">🏠</span> <span class="nav-text">Dashboard</span></a></li>
-    <li><a href="create-bill.html"><span class="nav-icon">🧾</span> <span class="nav-text">New Bill</span></a></li>
-    <li><a href="customers.html" class="active"><span class="nav-icon">👥</span> <span class="nav-text">Customers</span></a></li>
-    <li><a href="reports.html"><span class="nav-icon">📊</span> <span class="nav-text">Reports</span></a></li>
-    <li><a href="settings.html"><span class="nav-icon">⚙️</span> <span class="nav-text">Settings</span></a></li>
-  </ul>
-  <div id="navClock" class="nav-date">Loading…</div>
-</nav>
+<body class="no-sidebar">
 
 <div class="container">
 
@@ -35,9 +17,12 @@
       <h1 class="page-title">Customers</h1>
       <p class="page-subtitle"><span id="customerCount">0</span> customers in your database</p>
     </div>
-    <button class="btn btn-primary btn-lg" onclick="openModal('addCustomerModal')">
-      ➕ Add Customer
-    </button>
+    <div style="display:flex; gap:12px; align-items:center;">
+      <a href="index.html" class="btn btn-secondary btn-icon" title="Back to Home" style="font-size:20px; padding:8px 12px; border-radius:50%;">🏠</a>
+      <button class="btn btn-primary btn-lg" onclick="openModal('addCustomerModal')">
+        ➕ Add Customer
+      </button>
+    </div>
   </div>
 
   <!-- Search -->

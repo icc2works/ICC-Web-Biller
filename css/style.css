@@ -2294,3 +2294,73 @@ td {
     transform: scale(0.97);
   }
 }
+
+/* ===================== FLOATING BACK BUTTON ===================== */
+.back-home-btn {
+  position: fixed;
+  top: 24px;
+  left: 24px;
+  width: 48px;
+  height: 48px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  text-decoration: none;
+  color: var(--text-primary);
+  z-index: 2000;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  transition: var(--transition);
+}
+.back-home-btn:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--accent);
+  transform: translateY(-2px);
+}
+[data-theme="light"] .back-home-btn {
+  background: #ffffff;
+  border-color: rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+[data-theme="light"] .back-home-btn:hover {
+  border-color: #2563eb;
+}
+
+body.no-sidebar .container {
+  margin-left: auto !important;
+}
+
+@media (max-width: 768px) {
+  .back-home-btn {
+    top: 16px;
+    left: 16px;
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+  }
+  body.no-sidebar .container {
+    padding-top: 80px !important;
+  }
+}
+
+/* Ensure header is positioned relative so absolute children align to it */
+body.no-sidebar .page-header {
+  position: relative;
+}
+
+@media (max-width: 768px) {
+  /* Position the home icon absolute on top right of the header on mobile */
+  body.no-sidebar .page-header .btn-icon[title="Back to Home"] {
+    position: absolute;
+    top: 0;
+    right: 0;
+  }
+  
+  /* Prevent text from overlapping the absolutely positioned icon */
+  body.no-sidebar .page-header > div:first-child {
+    padding-right: 50px;
+  }
+}

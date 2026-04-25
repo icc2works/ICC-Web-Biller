@@ -18,18 +18,14 @@
     </div>
   </a>
   <ul class="nav-links" id="navLinks">
-    <li><a href="index.html">🏠 Dashboard</a></li>
-    <li><a href="create-bill.html">🧾 New Bill</a></li>
-    <li><a href="customers.html">👥 Customers</a></li>
-    <li><a href="reports.html">📊 Reports</a></li>
-    <li><a href="settings.html" class="active">⚙️ Settings</a></li>
+    <li><a href="index.html"><span class="nav-icon">🏠</span> <span class="nav-text">Dashboard</span></a></li>
+    <li><a href="create-bill.html"><span class="nav-icon">🧾</span> <span class="nav-text">New Bill</span></a></li>
+    <li><a href="customers.html"><span class="nav-icon">👥</span> <span class="nav-text">Customers</span></a></li>
+    <li><a href="reports.html"><span class="nav-icon">📊</span> <span class="nav-text">Reports</span></a></li>
+    <li><a href="settings.html" class="active"><span class="nav-icon">⚙️</span> <span class="nav-text">Settings</span></a></li>
   </ul>
   <div id="navClock" class="nav-date">Loading…</div>
-  <button class="hamburger-btn" id="hamburgerBtn" aria-label="Toggle menu">
-    <span></span><span></span><span></span>
-  </button>
 </nav>
-<div class="mobile-nav-overlay" id="mobileNavOverlay"></div>
 
 <div class="container" style="max-width:780px;">
 
@@ -42,193 +38,6 @@
     <button class="btn btn-primary" onclick="saveAllSettings()">💾 Save All Changes</button>
   </div>
 
-  <!-- Company Profile -->
-  <div class="settings-section">
-    <div class="settings-section-title">🏢 Company Profile</div>
-    <div class="grid-2">
-      <div class="form-group">
-        <label for="setCompanyName">Company Name</label>
-        <input type="text" id="setCompanyName" placeholder="Your business name">
-      </div>
-      <div class="form-group">
-        <label for="setCompanyGST">GST Number (optional)</label>
-        <input type="text" id="setCompanyGST" placeholder="27AABCU9603R1ZX">
-      </div>
-    </div>
-    <div class="form-group">
-      <label for="setCompanyAddress">Address (shown on invoice)</label>
-      <textarea id="setCompanyAddress" rows="2" placeholder="45, French Teacher St,&#10;Karaikal, Puducherry 609602" style="resize:vertical;"></textarea>
-    </div>
-    <div class="grid-2">
-      <div class="form-group">
-        <label for="setCompanyPhone">Primary Mobile</label>
-        <input type="tel" id="setCompanyPhone" placeholder="8870415956">
-      </div>
-      <div class="form-group">
-        <label for="setCompanyPhone2">Secondary Mobile (optional)</label>
-        <input type="tel" id="setCompanyPhone2" placeholder="9786876576">
-      </div>
-    </div>
-    <div class="grid-2">
-      <div class="form-group">
-        <label for="setWebsite">Website (optional)</label>
-        <input type="url" id="setWebsite" placeholder="https://indiancnccarving.com/">
-      </div>
-      <div class="form-group">
-        <label for="setCurrency">Currency Symbol</label>
-        <select id="setCurrency">
-          <option value="₹">₹ (INR - Rupee)</option>
-          <option value="$">$ (USD - Dollar)</option>
-          <option value="€">€ (EUR - Euro)</option>
-        </select>
-      </div>
-    </div>
-
-    <!-- QR Code Upload -->
-    <div style="background:rgba(79,158,255,0.06);border:1px solid var(--border-accent);border-radius:var(--radius-md);padding:16px;">
-      <div style="font-size:12px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;">📱 Scan &amp; Pay QR Code</div>
-      <div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;">
-        <div id="qrPreviewWrap" style="width:90px;height:90px;border:2px dashed var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;">
-          <span style="font-size:11px;color:var(--text-muted);text-align:center;line-height:1.4;">No QR<br>uploaded</span>
-        </div>
-        <div style="flex:1;">
-          <p style="font-size:12px;color:var(--text-secondary);margin-bottom:10px;">Upload your UPI / bank QR code image. It will appear on every printed invoice.</p>
-          <label class="btn btn-secondary btn-sm" style="cursor:pointer;">
-            📷 Upload QR Image
-            <input type="file" id="qrImageInput" accept="image/*" style="display:none;" onchange="previewQR(this)">
-          </label>
-          <button class="btn btn-ghost btn-sm" onclick="clearQR()" style="margin-left:8px;">✕ Clear</button>
-          <div style="font-size:11px;color:var(--text-muted);margin-top:6px;">PNG, JPG, GIF • Max 500KB • Stored locally</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── Invoice Format ── -->
-  <div class="settings-section">
-    <div class="settings-section-title">📄 Invoice Format</div>
-    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">
-      Customise how your printed invoice looks — edit labels, colors, column headers, and totals layout directly on an A5 paper canvas.
-    </p>
-    <div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;">
-      <!-- Mini preview -->
-      <div style="border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden;background:#fff;width:165px;flex-shrink:0;box-shadow:0 4px 20px rgba(0,0,0,0.35);">
-        <div style="background:#111;text-align:center;padding:6px 2px;">
-          <div style="font-size:7px;font-weight:800;letter-spacing:2px;color:#fff;">INDIAN CNC CARVING</div>
-          <div style="font-size:5px;font-weight:600;letter-spacing:1px;color:#ccc;border-top:1px solid #333;margin-top:2px;padding-top:2px;">INVOICE</div>
-        </div>
-        <div style="font-size:5px;color:#111;padding:3px 5px;border-bottom:1px solid #eee;background:#f9f9f9;">
-          <b>Bill to:</b> Customer &nbsp; | &nbsp; <b>Invoice no:</b> ICC-0327-001
-        </div>
-        <table style="width:100%;border-collapse:collapse;font-size:5px;color:#111;">
-          <tr style="background:#ffe066;"><th style="padding:2px;border:1px solid #ccc;">S:NO</th><th style="padding:2px;border:1px solid #ccc;">Description</th><th style="padding:2px;border:1px solid #ccc;">Price</th><th style="padding:2px;border:1px solid #ccc;">Qty</th><th style="padding:2px;border:1px solid #ccc;">Sub.</th></tr>
-          <tr><td style="padding:2px;border:1px solid #ddd;text-align:center;">1</td><td style="padding:2px;border:1px solid #ddd;">Mayil Door</td><td style="padding:2px;border:1px solid #ddd;text-align:center;">6000</td><td style="padding:2px;border:1px solid #ddd;text-align:center;">1</td><td style="padding:2px;border:1px solid #ddd;text-align:center;">6000</td></tr>
-          <tr><td style="padding:2px;border:1px solid #ddd;text-align:center;">2</td><td style="padding:2px;border:1px solid #ddd;">Jannel Set</td><td style="padding:2px;border:1px solid #ddd;text-align:center;">2800</td><td style="padding:2px;border:1px solid #ddd;text-align:center;">1</td><td style="padding:2px;border:1px solid #ddd;text-align:center;">2800</td></tr>
-          <tr style="opacity:0.2;"><td style="padding:3px;border:1px solid #ddd;" colspan="5"></td></tr>
-          <tr style="opacity:0.2;"><td style="padding:3px;border:1px solid #ddd;" colspan="5"></td></tr>
-        </table>
-        <table style="width:100%;border-collapse:collapse;font-size:5px;color:#111;">
-          <tr><td style="width:55%;border:1px solid #ddd;" rowspan="3"></td><td style="padding:2px 4px;border:1px solid #ddd;text-align:right;font-weight:600;">Total Price :</td><td style="padding:2px 4px;border:1px solid #ddd;text-align:right;">8,800</td></tr>
-          <tr><td style="padding:2px 4px;border:1px solid #ddd;text-align:right;font-weight:600;">Discount :</td><td style="padding:2px 4px;border:1px solid #ddd;text-align:right;">0</td></tr>
-          <tr><td style="padding:2px 4px;border:1px solid #ddd;text-align:right;font-weight:800;">Final :</td><td style="padding:2px 4px;border:1px solid #ddd;text-align:right;font-weight:800;">8,800</td></tr>
-        </table>
-        <div style="font-size:5px;padding:4px 6px;display:flex;justify-content:space-between;border-top:1px solid #111;background:#f9f9f9;">
-          <b style="color:#111;">INDIAN CNC CARVING</b><span style="color:#555;">SCAN &amp; PAY ▪</span>
-        </div>
-      </div>
-      <!-- Actions -->
-      <div style="flex:1;min-width:200px;">
-        <div style="font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:8px;">Current Format: A5 Portrait</div>
-        <ul style="font-size:12px;color:var(--text-secondary);line-height:2.2;margin-bottom:16px;padding-left:18px;">
-          <li>Click any cell on the A5 paper to edit text directly</li>
-          <li>Change column headers, label texts, row colors</li>
-          <li>Add or remove totals rows</li>
-          <li>Insert bill data variables (Bill No, Customer…)</li>
-          <li>Preview with sample data before saving</li>
-        </ul>
-        <a href="invoice-format.html" class="btn btn-primary" style="display:inline-flex;align-items:center;gap:8px;">
-          ✏️ Edit Invoice Format
-        </a>
-        <button class="btn btn-ghost btn-sm" style="margin-left:10px;" onclick="resetInvoiceFmt()">↺ Reset Default</button>
-        <div id="invFmtStatus" style="margin-top:10px;font-size:11px;color:var(--text-muted);"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Billing Config -->
-
-  <div class="settings-section">
-    <div class="settings-section-title">🧾 Billing Configuration</div>
-    <div class="grid-2">
-      <div class="form-group">
-        <label for="setTaxRate">Tax Rate (%)</label>
-        <input type="number" id="setTaxRate" min="0" max="100" step="0.5" placeholder="0">
-      </div>
-      <div class="form-group">
-        <label for="setDefaultRate">Default Rate (₹/sq.ft)</label>
-        <input type="number" id="setDefaultRate" min="0" placeholder="e.g. 250">
-      </div>
-    </div>
-    <div style="padding:12px 14px;background:rgba(79,158,255,0.06);border-radius:var(--radius-md);font-size:12px;color:var(--text-secondary);">
-      💡 Dimensions entered in <strong style="color:var(--text-primary);">inches</strong>.
-      Area is auto-computed as <strong style="color:var(--accent-3);">(H×W)/144 = sq.ft</strong>.
-      Then: <strong style="color:var(--accent-3);">sq.ft × Rate = Item Amount</strong>.
-    </div>
-  </div>
-
-  <!-- ═══════════════ THEME APPEARANCE ═══════════════ -->
-  <div class="settings-section">
-    <div class="settings-section-title">🎨 Theme Appearance</div>
-    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">
-      Choose your preferred theme. The selection applies across all pages instantly.
-    </p>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-      <!-- Dark Theme Card -->
-      <div id="themeDarkBtn" class="active" onclick="setTheme('dark')"
-        style="cursor:pointer;border-radius:var(--radius-lg);padding:20px;border:2px solid var(--border);transition:all 0.3s;position:relative;overflow:hidden;">
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
-          <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg, #0a0e1a, #1a2040);display:flex;align-items:center;justify-content:center;font-size:22px;border:1px solid rgba(255,255,255,0.1);">
-            🌙
-          </div>
-          <div>
-            <div style="font-weight:700;font-size:15px;">Dark Theme</div>
-            <div style="font-size:11px;color:var(--text-secondary);">Easy on the eyes</div>
-          </div>
-        </div>
-        <!-- Mini color preview -->
-        <div style="display:flex;gap:6px;margin-top:8px;">
-          <div style="width:24px;height:24px;border-radius:6px;background:#0a0e1a;border:1px solid rgba(255,255,255,0.15);" title="Background"></div>
-          <div style="width:24px;height:24px;border-radius:6px;background:#0f1629;border:1px solid rgba(255,255,255,0.15);" title="Card"></div>
-          <div style="width:24px;height:24px;border-radius:6px;background:#4f9eff;" title="Accent"></div>
-          <div style="width:24px;height:24px;border-radius:6px;background:#00d4aa;" title="Success"></div>
-          <div style="width:24px;height:24px;border-radius:6px;background:#7c5cfc;" title="Purple"></div>
-          <div style="width:24px;height:24px;border-radius:6px;background:#f0f4ff;border:1px solid rgba(255,255,255,0.15);" title="Text"></div>
-        </div>
-      </div>
-      <!-- Light Theme Card -->
-      <div id="themeLightBtn" onclick="setTheme('light')"
-        style="cursor:pointer;border-radius:var(--radius-lg);padding:20px;border:2px solid var(--border);transition:all 0.3s;position:relative;overflow:hidden;">
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
-          <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg, #f0f2f5, #e2e8f0);display:flex;align-items:center;justify-content:center;font-size:22px;border:1px solid rgba(0,0,0,0.1);">
-            ☀️
-          </div>
-          <div>
-            <div style="font-weight:700;font-size:15px;">Light Theme</div>
-            <div style="font-size:11px;color:var(--text-secondary);">Clean and bright</div>
-          </div>
-        </div>
-        <!-- Mini color preview -->
-        <div style="display:flex;gap:6px;margin-top:8px;">
-          <div style="width:24px;height:24px;border-radius:6px;background:#f0f2f5;border:1px solid rgba(0,0,0,0.12);" title="Background"></div>
-          <div style="width:24px;height:24px;border-radius:6px;background:#ffffff;border:1px solid rgba(0,0,0,0.12);" title="Card"></div>
-          <div style="width:24px;height:24px;border-radius:6px;background:#2d7dd2;" title="Accent"></div>
-          <div style="width:24px;height:24px;border-radius:6px;background:#00a87e;" title="Success"></div>
-          <div style="width:24px;height:24px;border-radius:6px;background:#6041d4;" title="Purple"></div>
-          <div style="width:24px;height:24px;border-radius:6px;background:#1a202c;border:1px solid rgba(0,0,0,0.12);" title="Text"></div>
-        </div>
-      </div>
-    </div>
-  </div>
 
   <!-- ═══════════════ ADD NEW ITEM ═══════════════ -->
   <div class="settings-section">
@@ -347,6 +156,60 @@
     </div>
   </div>
 
+  <!-- ═══════════════ THEME APPEARANCE ═══════════════ -->
+  <div class="settings-section">
+    <div class="settings-section-title">🎨 Theme Appearance</div>
+    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">
+      Choose your preferred theme. The selection applies across all pages instantly.
+    </p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <!-- Dark Theme Card -->
+      <div id="themeDarkBtn" class="active" onclick="setTheme('dark')"
+        style="cursor:pointer;border-radius:var(--radius-lg);padding:20px;border:2px solid var(--border);transition:all 0.3s;position:relative;overflow:hidden;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+          <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg, #0a0e1a, #1a2040);display:flex;align-items:center;justify-content:center;font-size:22px;border:1px solid rgba(255,255,255,0.1);">
+            🌙
+          </div>
+          <div>
+            <div style="font-weight:700;font-size:15px;">Dark Theme</div>
+            <div style="font-size:11px;color:var(--text-secondary);">Easy on the eyes</div>
+          </div>
+        </div>
+        <!-- Mini color preview -->
+        <div style="display:flex;gap:6px;margin-top:8px;">
+          <div style="width:24px;height:24px;border-radius:6px;background:#0a0e1a;border:1px solid rgba(255,255,255,0.15);" title="Background"></div>
+          <div style="width:24px;height:24px;border-radius:6px;background:#0f1629;border:1px solid rgba(255,255,255,0.15);" title="Card"></div>
+          <div style="width:24px;height:24px;border-radius:6px;background:#4f9eff;" title="Accent"></div>
+          <div style="width:24px;height:24px;border-radius:6px;background:#00d4aa;" title="Success"></div>
+          <div style="width:24px;height:24px;border-radius:6px;background:#7c5cfc;" title="Purple"></div>
+          <div style="width:24px;height:24px;border-radius:6px;background:#f0f4ff;border:1px solid rgba(255,255,255,0.15);" title="Text"></div>
+        </div>
+      </div>
+      <!-- Light Theme Card -->
+      <div id="themeLightBtn" onclick="setTheme('light')"
+        style="cursor:pointer;border-radius:var(--radius-lg);padding:20px;border:2px solid var(--border);transition:all 0.3s;position:relative;overflow:hidden;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+          <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg, #f0f2f5, #e2e8f0);display:flex;align-items:center;justify-content:center;font-size:22px;border:1px solid rgba(0,0,0,0.1);">
+            ☀️
+          </div>
+          <div>
+            <div style="font-weight:700;font-size:15px;">Light Theme</div>
+            <div style="font-size:11px;color:var(--text-secondary);">Clean and bright</div>
+          </div>
+        </div>
+        <!-- Mini color preview -->
+        <div style="display:flex;gap:6px;margin-top:8px;">
+          <div style="width:24px;height:24px;border-radius:6px;background:#f0f2f5;border:1px solid rgba(0,0,0,0.12);" title="Background"></div>
+          <div style="width:24px;height:24px;border-radius:6px;background:#ffffff;border:1px solid rgba(0,0,0,0.12);" title="Card"></div>
+          <div style="width:24px;height:24px;border-radius:6px;background:#2d7dd2;" title="Accent"></div>
+          <div style="width:24px;height:24px;border-radius:6px;background:#00a87e;" title="Success"></div>
+          <div style="width:24px;height:24px;border-radius:6px;background:#6041d4;" title="Purple"></div>
+          <div style="width:24px;height:24px;border-radius:6px;background:#1a202c;border:1px solid rgba(0,0,0,0.12);" title="Text"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div style="text-align:center;color:var(--text-muted);font-size:12px;margin-top:24px;">
     Indian CNC Carving Billing System v1.0 • Built with ❤️ • Data stored locally in your browser
   </div>
@@ -369,20 +232,6 @@
   // ---- Load form values ----
   function loadSettings() {
     const s = Storage.getSettings();
-    document.getElementById('setCompanyName').value    = s.companyName    || '';
-    document.getElementById('setCompanyPhone').value   = s.companyPhone   || '';
-    document.getElementById('setCompanyPhone2').value  = s.companyPhone2  || '';
-    document.getElementById('setCompanyAddress').value = s.companyAddress || '';
-    document.getElementById('setCompanyGST').value     = s.companyGST     || '';
-    document.getElementById('setWebsite').value        = s.website        || '';
-    document.getElementById('setCurrency').value       = s.currency       || '₹';
-    document.getElementById('setTaxRate').value        = s.taxRate        || 0;
-    document.getElementById('setDefaultRate').value    = s.defaultRate    || '';
-    // Load QR preview
-    const qrWrap = document.getElementById('qrPreviewWrap');
-    if (s.qrCode) {
-      qrWrap.innerHTML = '<img src="' + s.qrCode + '" style="width:100%;height:100%;object-fit:contain;">';
-    }
     // Load theme toggle state
     var currentTheme = localStorage.getItem('cnc_theme') || 'dark';
     var darkBtn = document.getElementById('themeDarkBtn');
@@ -397,51 +246,12 @@
   function saveAllSettings() {
     const existing = Storage.getSettings();
     const settings = {
-      ...existing,
-      companyName:    document.getElementById('setCompanyName').value.trim(),
-      companyPhone:   document.getElementById('setCompanyPhone').value.trim(),
-      companyPhone2:  document.getElementById('setCompanyPhone2').value.trim(),
-      companyAddress: document.getElementById('setCompanyAddress').value.trim(),
-      companyGST:     document.getElementById('setCompanyGST').value.trim(),
-      website:        document.getElementById('setWebsite').value.trim(),
-      currency:       document.getElementById('setCurrency').value,
-      taxRate:        parseFloat(document.getElementById('setTaxRate').value) || 0,
-      defaultRate:    document.getElementById('setDefaultRate').value || ''
+      ...existing
     };
     Storage.saveSettings(settings);
     showToast('Settings saved successfully!', 'success');
     updateStorageStats();
   }
-
-  // ---- QR Code Upload ----
-  function previewQR(input) {
-    const file = input.files[0];
-    if (!file) return;
-    if (file.size > 512 * 1024) { showToast('Image too large. Max 500KB.', 'warning'); return; }
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      const dataUrl = e.target.result;
-      const qrWrap  = document.getElementById('qrPreviewWrap');
-      qrWrap.innerHTML = '<img src="' + dataUrl + '" style="width:100%;height:100%;object-fit:contain;">';
-      // Save immediately into settings
-      const existing = Storage.getSettings();
-      existing.qrCode = dataUrl;
-      Storage.saveSettings(existing);
-      showToast('QR code saved!', 'success');
-    };
-    reader.readAsDataURL(file);
-  }
-
-  function clearQR() {
-    const qrWrap = document.getElementById('qrPreviewWrap');
-    qrWrap.innerHTML = '<span style="font-size:11px;color:var(--text-muted);text-align:center;line-height:1.4;">No QR<br>uploaded</span>';
-    const existing = Storage.getSettings();
-    existing.qrCode = '';
-    Storage.saveSettings(existing);
-    document.getElementById('qrImageInput').value = '';
-    showToast('QR code cleared', 'warning');
-  }
-
 
   // ---- CATALOG RENDER ----
   function renderCatalog(selectCat) {
@@ -685,15 +495,6 @@
     });
   }
 
-
-  // ---- Invoice Format Reset ----
-  function resetInvoiceFmt() {
-    if (!confirm('Reset invoice format to default? Your customisations will be lost.')) return;
-    Storage.resetInvoiceTemplate();
-    const el = document.getElementById('invFmtStatus');
-    if (el) el.textContent = '✅ Invoice format reset to default.';
-    showToast('Invoice format reset to default.', 'warning');
-  }
 
   // Enter key to add item
   document.addEventListener('keydown', (e) => {

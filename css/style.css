@@ -1930,40 +1930,61 @@ td {
     padding: 10px 12px;
   }
 
-  /* ---- Bill Item Rows — keep single line like desktop ---- */
+  /* ---- Responsive Bill Item Rows for Mobile ---- */
   .items-box {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
+    overflow-x: visible; /* Remove horizontal scroll on mobile */
   }
 
   .item-header {
-    display: grid;
-    min-width: 540px;
-    grid-template-columns: 120px 1fr 90px 55px 80px 36px;
-    gap: 6px;
-    padding: 6px 12px;
+    display: none; /* Hide horizontal column headers */
   }
 
   .item-row {
-    grid-template-columns: 120px 1fr 90px 55px 80px 36px;
-    grid-template-rows: auto;
-    min-width: 540px;
-    gap: 6px;
-    padding: 8px 12px;
-    border-radius: var(--radius-md);
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas: 
+      "cat name"
+      "price qty"
+      "total remove";
+    grid-template-rows: auto auto auto;
+    min-width: 0 !important;
+    gap: 12px;
+    padding: 16px;
+    border-radius: var(--radius-lg);
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border);
+    margin-bottom: 12px;
+  }
+  
+  [data-theme="light"] .item-row {
+    background: #f8fafc;
+  }
+
+  .item-row > .item-cat   { grid-area: cat; }
+  .item-row > .item-name  { grid-area: name; }
+  .item-row > .item-price { grid-area: price; }
+  .item-row > .item-qty   { grid-area: qty; }
+  .item-row > .item-total { 
+    grid-area: total; 
+    display: flex; 
+    align-items: center; 
+    font-size: 16px; 
+    font-weight: 600; 
+  }
+  .item-row > .remove-btn { 
+    grid-area: remove; 
+    justify-self: end; 
+    align-self: center;
+    width: 44px;
+    height: 44px;
+    font-size: 18px;
   }
 
   .item-row select,
   .item-row input {
-    padding: 8px 6px;
-    font-size: 13px;
-    min-height: 38px;
-  }
-
-  .remove-btn {
-    width: 36px;
-    height: 36px;
-    font-size: 16px;
+    padding: 10px 8px;
+    font-size: 14px;
+    min-height: 44px;
+    width: 100%;
   }
 
   /* ---- Bill Layout (create-bill) ---- */

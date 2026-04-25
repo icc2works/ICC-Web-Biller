@@ -1624,11 +1624,50 @@ td {
 
 /* ===================== RESPONSIVE ===================== */
 
-/* ---------- Tablet breakpoint (≤ 900px) ---------- */
-@media (max-width: 900px) {
+/* ---------- Tablet breakpoint (≤ 1024px) ---------- */
+@media (max-width: 1024px) {
+  /* Collapse Sidebar to Icon-Only */
+  .navbar {
+    width: 84px;
+    padding: 24px 12px;
+    align-items: center;
+  }
+  
+  .navbar-brand {
+    margin-bottom: 40px;
+    padding: 0;
+  }
+  
+  .brand-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+  }
+
+  .brand-name, 
+  .brand-sub, 
+  .nav-text, 
+  .nav-date {
+    display: none !important;
+  }
+  
+  .nav-links a {
+    justify-content: center;
+    padding: 14px 0;
+    width: 48px;
+    height: 48px;
+    margin: 0 auto 8px;
+  }
+  
+  .nav-icon {
+    font-size: 20px;
+    margin: 0;
+  }
+
   .container {
     max-width: 100%;
-    padding: 80px 20px 32px;
+    margin-left: 84px; /* Match mini-sidebar width */
+    padding: 50px 24px 40px;
   }
 
   .page-header.flex-between {
@@ -1931,6 +1970,9 @@ td {
   .bill-layout {
     grid-template-columns: 1fr !important;
     gap: 16px;
+  }
+  .bill-layout > div {
+    min-width: 0; /* Prevents grid items from expanding viewport */
   }
 
   /* ---- Buttons touch-friendly ---- */
@@ -2342,7 +2384,7 @@ body.no-sidebar .container {
     font-size: 20px;
   }
   body.no-sidebar .container {
-    padding-top: 80px !important;
+    padding: 24px 14px !important;
   }
 }
 

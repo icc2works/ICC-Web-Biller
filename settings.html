@@ -33,7 +33,7 @@
 
     <!-- Add Item Form -->
     <div style="background:linear-gradient(135deg, rgba(79,158,255,0.08), rgba(124,92,252,0.06));border:1.5px solid var(--border-accent);border-radius:var(--radius-lg);padding:24px;margin-bottom:20px;">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+      <div class="grid-2 mb-16">
         <div class="form-group" style="margin-bottom:0;">
           <label for="newItemCat">📂 Category</label>
           <select id="newItemCat"></select>
@@ -43,12 +43,12 @@
           <input type="text" id="newItemName" placeholder="e.g. Special Door, Jannel Set">
         </div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr auto;gap:16px;align-items:flex-end;">
+      <div class="grid-2" style="align-items:flex-end;">
         <div class="form-group" style="margin-bottom:0;">
           <label for="newItemPrice">💰 Default Price (₹)</label>
           <input type="number" id="newItemPrice" placeholder="Enter price" min="0" step="1">
         </div>
-        <button class="btn btn-primary btn-lg" onclick="addCatalogItemUI()" style="height:50px;min-width:160px;">
+        <button class="btn btn-primary btn-lg" onclick="addCatalogItemUI()" style="height:48px;">
           ➕ Add Item
         </button>
       </div>
@@ -57,12 +57,12 @@
     <!-- Add New Category -->
     <div style="background:rgba(0,212,170,0.06);border:1.5px solid rgba(0,212,170,0.2);border-radius:var(--radius-md);padding:16px;">
       <div style="font-size:12px;font-weight:700;color:var(--accent-3);margin-bottom:10px;text-transform:uppercase;letter-spacing:1px;">📁 Add New Category</div>
-      <div style="display:flex;gap:12px;align-items:flex-end;">
-        <div style="flex:1;">
+      <div class="grid-2" style="align-items:flex-end;">
+        <div class="form-group" style="margin-bottom:0;">
           <label for="newCatName">Category Name</label>
           <input type="text" id="newCatName" placeholder="e.g. Frames, Pillars, Custom Work…">
         </div>
-        <button class="btn btn-success" onclick="addCatalogCategoryUI()" style="height:50px;min-width:160px;">
+        <button class="btn btn-success btn-lg" onclick="addCatalogCategoryUI()" style="height:48px;">
           ➕ Add Category
         </button>
       </div>

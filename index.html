@@ -166,22 +166,22 @@
 
       tbody.innerHTML = bills.map(b => `
       <tr class="fade-in">
-        <td><span style="font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--accent);">${b.billNo}</span></td>
-        <td>
+        <td data-label="Bill No."><span style="font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--accent);">${b.billNo}</span></td>
+        <td data-label="Customer">
           <div style="font-weight:600;">${b.customerName}</div>
           <div style="font-size:11px;color:var(--text-muted);">${b.customerPhone || ''}</div>
         </td>
-        <td style="font-size:12px;color:var(--text-secondary);">${formatDate(b.createdAt)}</td>
-        <td><span class="badge badge-blue">${b.items.length} item${b.items.length !== 1 ? 's' : ''}</span></td>
-        <td style="font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--accent-3);">
+        <td data-label="Date" style="font-size:12px;color:var(--text-secondary);">${formatDate(b.createdAt)}</td>
+        <td data-label="Items"><span class="badge badge-blue">${b.items.length} item${b.items.length !== 1 ? 's' : ''}</span></td>
+        <td data-label="Amount" style="font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--accent-3);">
           ${sym}${b.totalAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
         </td>
-        <td>
+        <td data-label="Status">
           <span class="badge ${b.status === 'paid' ? 'badge-success' : 'badge-warning'}">
             ${b.status === 'paid' ? '✓' : ''} ${b.status.charAt(0).toUpperCase() + b.status.slice(1)}
           </span>
         </td>
-        <td>
+        <td data-label="Action">
           <button class="btn btn-sm btn-secondary" onclick="reprintBill('${b.id}')">🖨️ Print</button>
         </td>
       </tr>

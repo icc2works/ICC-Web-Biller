@@ -252,20 +252,20 @@
 
     tbody.innerHTML = bills.map(b => `
       <tr class="fade-in">
-        <td><span style="font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--accent);">${b.billNo}</span></td>
-        <td>
+        <td data-label="Bill No."><span style="font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--accent);">${b.billNo}</span></td>
+        <td data-label="Customer">
           <div style="font-weight:600;">${escReportHtml(b.customerName)}</div>
           <div style="font-size:11px;color:var(--text-muted);">${b.customerPhone||''}</div>
         </td>
-        <td style="font-size:12px;color:var(--text-secondary);">${formatDateTime(b.createdAt)}</td>
-        <td><span class="badge badge-blue">${b.items.length}</span></td>
-        <td style="font-size:12px;color:var(--text-secondary);">
+        <td data-label="Date & Time" style="font-size:12px;color:var(--text-secondary);">${formatDateTime(b.createdAt)}</td>
+        <td data-label="Items"><span class="badge badge-blue">${b.items.length}</span></td>
+        <td data-label="Subtotal" style="font-size:12px;color:var(--text-secondary);">
           ${sym}${b.subTotal.toLocaleString('en-IN',{maximumFractionDigits:2})}
         </td>
-        <td style="font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--accent-3);">
+        <td data-label="Total" style="font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--accent-3);">
           ${sym}${b.totalAmount.toLocaleString('en-IN',{maximumFractionDigits:2})}
         </td>
-        <td>
+        <td data-label="Status">
           <select onchange="updateBillStatus('${b.id}',this.value)"
             style="padding:5px 8px;font-size:12px;border-radius:6px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-primary);width:110px;">
             <option value="paid"    ${b.status==='paid'   ?'selected':''}>✅ Paid</option>
@@ -273,7 +273,7 @@
             <option value="partial" ${b.status==='partial'?'selected':''}>🔷 Partial</option>
           </select>
         </td>
-        <td>
+        <td data-label="Actions">
           <div style="display:flex;gap:6px;">
             <button class="btn btn-sm btn-secondary" onclick="viewBillDetail('${b.id}')" title="View">👁️</button>
             <button class="btn btn-sm btn-secondary" onclick="printBill('${b.id}')" title="Print">🖨️</button>

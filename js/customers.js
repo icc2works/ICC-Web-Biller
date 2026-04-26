@@ -29,7 +29,7 @@ function loadCustomers(filterText = '') {
 
   tbody.innerHTML = filtered.map((c, i) => `
     <tr class="fade-in">
-      <td>
+      <td data-label="Customer">
         <div style="display:flex;align-items:center;gap:10px;">
           <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#4f9eff,#7c5cfc);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;">
             ${c.name.charAt(0).toUpperCase()}
@@ -40,12 +40,12 @@ function loadCustomers(filterText = '') {
           </div>
         </div>
       </td>
-      <td style="font-family:'JetBrains Mono',monospace;">${escHtml(c.phone||'—')}</td>
-      <td style="color:var(--text-secondary);font-size:12px;">${formatDate(c.createdAt)}</td>
-      <td>
+      <td data-label="Phone" style="font-family:'JetBrains Mono',monospace;">${escHtml(c.phone||'—')}</td>
+      <td data-label="Added On" style="color:var(--text-secondary);font-size:12px;">${formatDate(c.createdAt)}</td>
+      <td data-label="Bills">
         <span class="badge badge-blue">${getBillCountForCustomer(c.id)} bills</span>
       </td>
-      <td>
+      <td data-label="Actions">
         <div style="display:flex;gap:6px;">
           <button class="btn btn-sm btn-secondary" onclick="editCustomer('${c.id}')" title="Edit">✏️</button>
           <button class="btn btn-sm btn-secondary" onclick="viewCustomerBills('${c.id}')" title="Bills">🧾</button>

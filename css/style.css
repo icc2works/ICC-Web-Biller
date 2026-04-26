@@ -2037,6 +2037,10 @@ td {
     border-radius: var(--radius-md);
   }
 
+  .search-input-wrap input {
+    padding-left: 42px;
+  }
+
   .form-group {
     margin-bottom: 14px;
   }
@@ -2129,6 +2133,7 @@ td {
   /* ---- Search Bar ---- */
   .search-bar {
     flex-direction: column;
+    align-items: stretch;
     gap: 8px;
   }
 
@@ -2257,18 +2262,20 @@ td {
   }
 
   /* Reports action buttons */
-  .page-header .btn {
+  .page-header .btn:not(.btn-icon) {
     width: 100%;
   }
 
-  .page-header div[style*="display:flex;gap:10px"] {
+  .page-header > div:last-child {
     flex-direction: column;
     width: 100%;
+    align-items: stretch !important;
   }
 
   /* Table font shrink */
   table {
     font-size: 11.5px;
+    white-space: nowrap;
   }
 
   thead th {

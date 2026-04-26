@@ -316,12 +316,12 @@
 
     const rows = bill.items.map((item, i) => `
       <tr>
-        <td style="padding:9px 12px;">${i + 1}</td>
-        <td style="padding:9px 12px;color:var(--text-muted);font-size:12px;">${item.category || ''}</td>
-        <td style="padding:9px 12px;font-weight:600;">${item.itemName || item.type || ''}</td>
-        <td style="padding:9px 12px;font-family:'JetBrains Mono',monospace;">${sym}${(item.unitPrice || item.rate || 0).toLocaleString('en-IN')}</td>
-        <td style="padding:9px 12px;text-align:center;">${item.qty || 1}</td>
-        <td style="padding:9px 12px;font-weight:700;color:var(--accent-3);">${sym}${(item.subtotal || item.amount || 0).toLocaleString('en-IN', {maximumFractionDigits:2})}</td>
+        <td data-label="#" style="padding:9px 12px;">${i + 1}</td>
+        <td data-label="Category" style="padding:9px 12px;color:var(--text-muted);font-size:12px;">${item.category || ''}</td>
+        <td data-label="Item Name" style="padding:9px 12px;font-weight:600;">${item.itemName || item.type || ''}</td>
+        <td data-label="Unit Price" style="padding:9px 12px;font-family:'JetBrains Mono',monospace;">${sym}${(item.unitPrice || item.rate || 0).toLocaleString('en-IN')}</td>
+        <td data-label="Qty" style="padding:9px 12px;text-align:right;">${item.qty || 1}</td>
+        <td data-label="Subtotal" style="padding:9px 12px;font-weight:700;color:var(--accent-3);">${sym}${(item.subtotal || item.amount || 0).toLocaleString('en-IN', {maximumFractionDigits:2})}</td>
       </tr>
     `).join('');
 

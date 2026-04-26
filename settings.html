@@ -318,19 +318,19 @@
             ? `<tr><td colspan="4"><div class="empty-state" style="padding:24px;"><span class="empty-icon">📦</span><p>No items in this category yet.<br><span style="font-size:12px;color:var(--text-muted);">Use the "Add New Item" form above to add items.</span></p></div></td></tr>`
             : items.map((item, i) => `
               <tr>
-                <td style="color:var(--text-muted);font-size:12px;">${i + 1}</td>
-                <td style="font-weight:600;">${escHtmlSet(item.name)}</td>
-                <td>
+                <td data-label="#" style="color:var(--text-muted);font-size:12px;">${i + 1}</td>
+                <td data-label="Item Name" style="font-weight:600;">${escHtmlSet(item.name)}</td>
+                <td data-label="Price (₹)">
                   <input type="number" min="0"
                     id="price-${activeCat.replace(/\s/g,'_')}-${i}"
                     value="${item.price}"
                     onchange="updatePriceUI('${escAttr(activeCat)}', '${escAttr(item.name)}', this.value)"
-                    style="width:120px;padding:6px 10px;font-size:13px;font-family:'JetBrains Mono',monospace;font-weight:600;border-radius:6px;border:1px solid var(--border);background:var(--bg-card);color:var(--accent-3);">
+                    style="width:120px;padding:6px 10px;font-size:13px;font-family:'JetBrains Mono',monospace;font-weight:600;border-radius:6px;border:1px solid var(--border);background:var(--bg-card);color:var(--accent-3);text-align:right;">
                 </td>
-                <td>
+                <td data-label="Action">
                   <button class="btn btn-danger btn-sm"
                     onclick="deleteCatalogItemUI('${escAttr(activeCat)}', '${escAttr(item.name)}')">
-                    🗑️
+                    🗑️ Delete
                   </button>
                 </td>
               </tr>

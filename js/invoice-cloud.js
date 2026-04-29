@@ -59,6 +59,16 @@
     return APPS_SCRIPT_URL + '?' + queryString;
   }
 
+  function saveInvoiceUrls(billId, driveUrl, pdfUrl, fileId) {
+    if (!window.Storage || typeof window.Storage.updateBill !== 'function') return;
+    window.Storage.updateBill(billId, {
+      invoiceDriveUrl: driveUrl,
+      invoicePdfUrl: pdfUrl,
+      invoiceFileId: fileId,
+      invoiceGeneratedAt: new Date().toISOString()
+    });
+  }
+
   /**
    * Generate invoice using Google Apps Script and open PDF for printing.
    * @param {string} billId - The bill ID to generate invoice for
@@ -125,6 +135,8 @@
           // Build direct PDF download URL
           var pdfUrl = 'https://drive.google.com/uc?export=download&id=' + fileId;
 
+          saveInvoiceUrls(bill.id, data, pdfUrl, fileId);
+
           // Open PDF in new window
           var win = window.open(pdfUrl, '_blank');
 
@@ -140,7 +152,7 @@
           }, 3000);
 
           if (typeof showToast === 'function') {
-            showToast('Invoice generated! Bill #' + bill.billNo + ' — If print dialog didn\'t appear, press Ctrl+P.', 'success');
+            showToast('Invoice generated and saved to bill #' + bill.billNo + '. If print dialog didn\'t appear, press Ctrl+P.', 'success');
           }
         })
         .catch(function (err) {

@@ -286,7 +286,7 @@
         <td data-label="Actions">
           <div style="display:flex;gap:6px;">
             <button class="btn btn-sm btn-secondary" onclick="viewBillDetail('${b.id}')" title="View">👁️</button>
-            <button class="btn btn-sm btn-secondary" onclick="printBill('${b.id}')" title="Print">🖨️</button>
+            ${b.invoicePdfUrl ? `<button class="btn btn-sm btn-success" onclick="viewInvoicePdf('${b.id}')" title="Download PDF">Download (PDF)</button>` : ''}
             <button class="btn btn-sm btn-danger" onclick="deleteBillConfirm('${b.id}')" title="Delete">🗑️</button>
           </div>
         </td>
@@ -304,6 +304,15 @@
     Storage.updateBill(id, { status });
     showToast('Bill status updated to ' + status, 'success');
     loadReports();
+  }
+
+  function viewInvoicePdf(id) {
+    const bill = Storage.getBillById(id);
+    if (!bill || !bill.invoicePdfUrl) {
+      showToast('Saved invoice PDF not found for this bill', 'warning');
+      return;
+    }
+    window.open(bill.invoicePdfUrl, '_blank');
   }
 
   function deleteBillConfirm(id) {
@@ -360,7 +369,7 @@
       </div>
       ${bill.note ? `<div style="margin-top:14px;padding:12px;background:rgba(255,217,61,0.08);border-radius:8px;font-size:13px;color:var(--text-secondary);">📝 ${bill.note}</div>` : ''}
       <div style="display:flex;gap:10px;margin-top:20px;">
-        <button class="btn btn-primary" onclick="printBill('${bill.id}')">🖨️ Print Invoice</button>
+        ${bill.invoicePdfUrl ? `<button class="btn btn-success" onclick="viewInvoicePdf('${bill.id}')">Download (PDF)</button>` : ''}
         <button class="btn btn-secondary" onclick="closeModal('billDetailModal')">Close</button>
       </div>
     `;

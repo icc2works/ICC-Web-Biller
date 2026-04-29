@@ -223,6 +223,15 @@ function resetBillForm() {
 
 // ---- Generate Invoice via Cloud (Google Apps Script) ----
 function printBill(billId) {
+  var bill = window.Storage && typeof Storage.getBillById === 'function'
+    ? Storage.getBillById(billId)
+    : null;
+
+  if (bill && bill.invoicePdfUrl) {
+    window.open(bill.invoicePdfUrl, '_blank');
+    return;
+  }
+
   // Delegate to the cloud invoice generator (invoice-cloud.js)
   if (typeof generateCloudInvoice === 'function') {
     generateCloudInvoice(billId);

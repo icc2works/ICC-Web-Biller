@@ -1538,6 +1538,32 @@ td[data-label="Action"] .btn {
   gap: 8px;
 }
 
+/* Catalog table inside settings — fit to section width */
+.settings-section .table-wrap table {
+  min-width: 0;
+  table-layout: fixed;
+}
+
+.settings-section .table-wrap table th:nth-child(1),
+.settings-section .table-wrap table td:nth-child(1) {
+  width: 6%;
+}
+
+.settings-section .table-wrap table th:nth-child(2),
+.settings-section .table-wrap table td:nth-child(2) {
+  width: 34%;
+}
+
+.settings-section .table-wrap table th:nth-child(3),
+.settings-section .table-wrap table td:nth-child(3) {
+  width: 35%;
+}
+
+.settings-section .table-wrap table th:nth-child(4),
+.settings-section .table-wrap table td:nth-child(4) {
+  width: 25%;
+}
+
 /* ===================== THEME CARDS ===================== */
 #themeDarkBtn,
 #themeLightBtn {
@@ -2394,12 +2420,72 @@ td {
   }
 
   .table-wrap td:not([data-label]) {
-    /* For empty state td */
     padding: 20px 10px;
     text-align: center;
   }
 
-  /* Prevent body scroll when menu is open */
+  /* ---- Settings catalog table: compact mobile cards ---- */
+  .settings-section .table-wrap {
+    border: none !important;
+    background: transparent !important;
+  }
+
+  .settings-section .table-wrap table {
+    table-layout: auto;
+  }
+
+  .settings-section .table-wrap tbody tr {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0 12px;
+    align-items: center;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+  }
+
+  .settings-section .table-wrap td[data-label] {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0 !important;
+    border-bottom: none !important;
+  }
+
+  .settings-section .table-wrap td[data-label]::before {
+    display: none;
+  }
+
+  .settings-section .table-wrap td[data-label="#"] {
+    display: none;
+  }
+
+  .settings-section .table-wrap td[data-label="Item Name"] {
+    grid-column: 1 / -1;
+    font-size: 15px;
+    font-weight: 700;
+    padding-bottom: 6px !important;
+  }
+
+  .settings-section .table-wrap td[data-label="Price (₹)"] {
+    grid-column: 1;
+  }
+
+  .settings-section .table-wrap td[data-label="Price (₹)"] input {
+    width: 140px;
+    min-height: 40px;
+    padding: 8px 12px;
+    font-size: 15px;
+  }
+
+  .settings-section .table-wrap td[data-label="Action"] {
+    grid-column: 2;
+    justify-self: end;
+  }
+
+  .settings-section .table-wrap td[data-label="Action"] .btn {
+    min-height: 40px;
+  }
+
   body.menu-open {
     overflow: hidden;
   }

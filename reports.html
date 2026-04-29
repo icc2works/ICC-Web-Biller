@@ -21,6 +21,132 @@
     .filter-bar .form-group { margin: 0; }
     .filter-bar label { margin-bottom: 5px; }
     .filter-bar > div:last-child { min-width: max-content; }
+    .gst-month-picker {
+      display: flex;
+      align-items: stretch;
+      gap: 0;
+      margin-bottom: 22px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+    .gst-month-card {
+      flex: 1;
+      padding: 18px 20px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      position: relative;
+      transition: var(--transition);
+    }
+    .gst-month-card:hover {
+      background: var(--bg-card-hover);
+    }
+    .gst-month-card:first-child {
+      border-right: 1px solid var(--border);
+    }
+    .gst-month-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      flex-shrink: 0;
+    }
+    .gst-month-card:first-child .gst-month-icon {
+      background: linear-gradient(135deg, rgba(79,158,255,0.15), rgba(124,92,252,0.1));
+    }
+    .gst-month-card:last-child .gst-month-icon {
+      background: linear-gradient(135deg, rgba(0,212,170,0.15), rgba(79,158,255,0.1));
+    }
+    .gst-month-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .gst-month-info label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+    .gst-month-info input[type="month"] {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: var(--radius-sm);
+      font-size: 15px;
+      font-weight: 600;
+      border: 1.5px solid transparent;
+      background: rgba(255,255,255,0.03);
+      color: var(--text-primary);
+      font-family: 'JetBrains Mono', monospace;
+      transition: var(--transition);
+      cursor: pointer;
+    }
+    .gst-month-info input[type="month"]:hover {
+      border-color: var(--border-accent);
+      background: rgba(79,158,255,0.04);
+    }
+    .gst-month-info input[type="month"]:focus {
+      border-color: var(--accent);
+      background: rgba(79,158,255,0.06);
+      box-shadow: 0 0 0 3px rgba(79,158,255,0.1);
+      outline: none;
+    }
+    .gst-month-divider {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 6px;
+      color: var(--text-muted);
+      font-size: 18px;
+      flex-shrink: 0;
+      align-self: center;
+    }
+    .gst-month-actions {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .gst-month-actions .btn {
+      flex: 1;
+    }
+    .gst-summary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(120px, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .gst-summary-box {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      background: var(--bg-card);
+    }
+    .gst-summary-box small {
+      display: block;
+      color: var(--text-secondary);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .8px;
+      text-transform: uppercase;
+      margin-bottom: 5px;
+    }
+    .gst-summary-box strong {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 18px;
+    }
+    .gst-report-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
     @media (max-width: 1100px) {
       .filter-bar {
         grid-template-columns: repeat(2, minmax(180px, 1fr));
@@ -39,6 +165,25 @@
       .filter-bar > div:last-child .btn {
         flex: 1;
       }
+      .gst-month-picker {
+        flex-direction: column;
+      }
+      .gst-month-card:first-child {
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+      }
+      .gst-month-divider {
+        display: none;
+      }
+      .gst-month-actions {
+        flex-direction: column;
+      }
+      .gst-summary-grid {
+        grid-template-columns: 1fr;
+      }
+      .gst-report-actions .btn {
+        width: 100%;
+      }
     }
   </style>
 </head>
@@ -53,6 +198,7 @@
       <p class="page-subtitle">All bills • Filter by date and customer</p>
     </div>
     <div style="display:flex; gap:12px; align-items:center;">
+      <button class="btn btn-success" onclick="openGstReport()">GST Report</button>
       <button class="btn btn-secondary" onclick="exportBillsCSV()">📥 Export CSV</button>
       <a href="create-bill.html" class="btn btn-primary">➕ New Bill</a>
       <a href="index.html" class="btn btn-secondary btn-icon" title="Back to Home" style="font-size:20px; padding:8px 12px; border-radius:50%; margin-left:8px;">🏠</a>
@@ -150,6 +296,80 @@
 
 </div>
 
+<!-- GST Report Modal -->
+<div class="modal-overlay" id="gstReportModal">
+  <div class="modal" style="max-width:960px;">
+    <div class="modal-header">
+      <div class="modal-title">GST Report</div>
+      <button class="modal-close" onclick="closeModal('gstReportModal')">✕</button>
+    </div>
+
+    <div class="gst-month-picker">
+      <div class="gst-month-card">
+        <div class="gst-month-icon">📅</div>
+        <div class="gst-month-info">
+          <label>From Month</label>
+          <input type="month" id="gstFromMonth">
+        </div>
+      </div>
+      <div class="gst-month-divider">→</div>
+      <div class="gst-month-card">
+        <div class="gst-month-icon">🗓️</div>
+        <div class="gst-month-info">
+          <label>To Month</label>
+          <input type="month" id="gstToMonth">
+        </div>
+      </div>
+    </div>
+    <div class="gst-month-actions">
+      <button class="btn btn-primary" onclick="renderGstReport()">🔍 Show Report</button>
+    </div>
+
+    <div class="gst-summary-grid">
+      <div class="gst-summary-box">
+        <small>Invoices</small>
+        <strong id="gstCount">0</strong>
+      </div>
+      <div class="gst-summary-box">
+        <small>Subtotal</small>
+        <strong id="gstSubtotal">0</strong>
+      </div>
+      <div class="gst-summary-box">
+        <small>GST</small>
+        <strong id="gstTax">0</strong>
+      </div>
+      <div class="gst-summary-box">
+        <small>Total</small>
+        <strong id="gstTotal">0</strong>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Bill No.</th>
+            <th>Customer</th>
+            <th>Date</th>
+            <th>Subtotal</th>
+            <th>GST</th>
+            <th>Total</th>
+            <th>Invoice</th>
+          </tr>
+        </thead>
+        <tbody id="gstReportBody">
+          <tr><td colspan="7"><div class="empty-state"><p>Select a month range and show report.</p></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="gst-report-actions">
+      <button class="btn btn-success" onclick="downloadAllGstPdfs()">📥 Download All PDFs</button>
+      <button class="btn btn-secondary" onclick="closeModal('gstReportModal')">Close</button>
+    </div>
+  </div>
+</div>
+
 <!-- Bill Detail Modal -->
 <div class="modal-overlay" id="billDetailModal">
   <div class="modal" style="max-width:700px;">
@@ -166,11 +386,14 @@
 <script src="js/cloud-db.js"></script>
 <script src="js/storage.js"></script>
 <script src="js/app.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script src="js/invoice-xlsx.js"></script>
 <script src="js/billing.js"></script>
 <script>
   let currentBills = [];
+  let currentGstBills = [];
 
   document.addEventListener('DOMContentLoaded', () => {
     // Populate customer select
@@ -188,6 +411,9 @@
     }
     if (params.get('print')) {
       setTimeout(() => printBill(params.get('print')), 800);
+    }
+    if (params.get('gst')) {
+      setTimeout(openGstReport, 300);
     }
 
     loadReports();
@@ -313,6 +539,288 @@
       return;
     }
     window.open(bill.invoicePdfUrl, '_blank');
+  }
+
+  function getBillDate(bill) {
+    const raw = bill.createdAt || bill.billDate;
+    const date = raw ? new Date(raw) : new Date();
+    return isNaN(date.getTime()) ? new Date() : date;
+  }
+
+  function getMonthValue(date) {
+    return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0');
+  }
+
+  function getMonthStart(value) {
+    const parts = String(value || '').split('-').map(Number);
+    return new Date(parts[0], (parts[1] || 1) - 1, 1);
+  }
+
+  function getMonthEnd(value) {
+    const parts = String(value || '').split('-').map(Number);
+    return new Date(parts[0], parts[1] || 1, 0, 23, 59, 59, 999);
+  }
+
+  function getGstZipName(fromMonth, toMonth) {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const fromDate = getMonthStart(fromMonth);
+    const toDate = getMonthStart(toMonth);
+    const fromLabel = months[fromDate.getMonth()];
+    const toLabel = months[toDate.getMonth()];
+    const yearLabel = String(toDate.getFullYear()).slice(-2);
+    return fromLabel + ' to ' + toLabel + ' ' + yearLabel + ' GST ICC';
+  }
+
+  function openGstReport() {
+    const from = document.getElementById('gstFromMonth');
+    const to = document.getElementById('gstToMonth');
+    const filterFrom = document.getElementById('filterFrom').value;
+    const filterTo = document.getElementById('filterTo').value;
+    const now = new Date();
+
+    if (!from.value) from.value = filterFrom ? getMonthValue(new Date(filterFrom)) : getMonthValue(now);
+    if (!to.value) to.value = filterTo ? getMonthValue(new Date(filterTo)) : from.value;
+
+    renderGstReport();
+    openModal('gstReportModal');
+  }
+
+  function renderGstReport() {
+    const fromMonth = document.getElementById('gstFromMonth').value;
+    const toMonth = document.getElementById('gstToMonth').value;
+    if (!fromMonth || !toMonth) {
+      showToast('Please select from and to month', 'warning');
+      return false;
+    }
+
+    let fromDate = getMonthStart(fromMonth);
+    let toDate = getMonthEnd(toMonth);
+    if (fromDate > toDate) {
+      const swap = fromMonth;
+      document.getElementById('gstFromMonth').value = toMonth;
+      document.getElementById('gstToMonth').value = swap;
+      fromDate = getMonthStart(toMonth);
+      toDate = getMonthEnd(swap);
+    }
+
+    const settings = Storage.getSettings();
+    const sym = settings.currency || '₹';
+    const bills = Storage.getBills()
+      .filter(b => {
+        const date = getBillDate(b);
+        return date >= fromDate && date <= toDate;
+      })
+      .sort((a, b) => getBillDate(a) - getBillDate(b));
+
+    currentGstBills = bills;
+
+    const subtotal = bills.reduce((s, b) => s + Number(b.subTotal || 0), 0);
+    const tax = bills.reduce((s, b) => s + Number(b.taxAmount || 0), 0);
+    const total = bills.reduce((s, b) => s + Number(b.totalAmount || 0), 0);
+
+    document.getElementById('gstCount').textContent = bills.length;
+    document.getElementById('gstSubtotal').textContent = sym + subtotal.toLocaleString('en-IN', { maximumFractionDigits: 2 });
+    document.getElementById('gstTax').textContent = sym + tax.toLocaleString('en-IN', { maximumFractionDigits: 2 });
+    document.getElementById('gstTotal').textContent = sym + total.toLocaleString('en-IN', { maximumFractionDigits: 2 });
+
+    const tbody = document.getElementById('gstReportBody');
+    if (!bills.length) {
+      tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><p>No invoices found for selected month.</p></div></td></tr>';
+      return true;
+    }
+
+    tbody.innerHTML = bills.map(b => `
+      <tr>
+        <td data-label="Bill No."><span style="font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--accent);">${escReportHtml(b.billNo)}</span></td>
+        <td data-label="Customer">${escReportHtml(b.customerName || '')}</td>
+        <td data-label="Date">${formatDate(b.createdAt || b.billDate)}</td>
+        <td data-label="Subtotal">${sym}${Number(b.subTotal || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</td>
+        <td data-label="GST">${sym}${Number(b.taxAmount || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</td>
+        <td data-label="Total">${sym}${Number(b.totalAmount || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</td>
+        <td data-label="Invoice">${b.invoicePdfUrl
+          ? `<a href="${b.invoicePdfUrl}" target="_blank" class="btn btn-sm btn-success" style="text-decoration:none;">📄 PDF</a>`
+          : '<span class="badge badge-warning">No PDF</span>'}</td>
+      </tr>
+    `).join('');
+    return true;
+  }
+
+  function sanitizeZipEntryName(name) {
+    return String(name || 'invoice').replace(/[\\/:*?"<>|]+/g, '-').replace(/\s+/g, ' ').trim();
+  }
+
+  function addWrappedPdfText(pdf, text, x, y, maxWidth, lineHeight) {
+    const lines = pdf.splitTextToSize(String(text || ''), maxWidth);
+    lines.forEach(line => {
+      pdf.text(line, x, y);
+      y += lineHeight;
+    });
+    return y;
+  }
+
+  function generateInvoicePdfBlob(bill) {
+    const jsPdfLib = window.jspdf && window.jspdf.jsPDF;
+    if (!jsPdfLib) throw new Error('PDF library not loaded');
+
+    const settings = Storage.getSettings();
+    const currency = settings.currency || 'Rs.';
+    const pdf = new jsPdfLib({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const margin = 14;
+    let y = 16;
+
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(16);
+    pdf.text(String(settings.companyName || 'Indian CNC Carving').toUpperCase(), pageWidth / 2, y, { align: 'center' });
+
+    y += 7;
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(9);
+    if (settings.companyAddress) {
+      y = addWrappedPdfText(pdf, settings.companyAddress.replace(/\n/g, ', '), margin, y, pageWidth - (margin * 2), 4);
+    }
+    const phoneLine = [settings.companyPhone, settings.companyPhone2].filter(Boolean).join(' / ');
+    if (phoneLine) {
+      pdf.text('Mobile: ' + phoneLine, pageWidth / 2, y, { align: 'center' });
+      y += 5;
+    }
+    if (settings.companyGST) {
+      pdf.text('GST: ' + settings.companyGST, pageWidth / 2, y, { align: 'center' });
+      y += 5;
+    }
+
+    y += 2;
+    pdf.line(margin, y, pageWidth - margin, y);
+    y += 8;
+
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(14);
+    pdf.text('INVOICE', margin, y);
+    pdf.setFontSize(10);
+    pdf.text('Invoice No: ' + (bill.billNo || ''), pageWidth - margin, y, { align: 'right' });
+    y += 6;
+    pdf.setFont('helvetica', 'normal');
+    pdf.text('Date: ' + formatDate(bill.createdAt || bill.billDate), pageWidth - margin, y, { align: 'right' });
+
+    y += 9;
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('Bill To', margin, y);
+    y += 5;
+    pdf.setFont('helvetica', 'normal');
+    pdf.text(String(bill.customerName || ''), margin, y);
+    y += 5;
+    if (bill.customerPhone) {
+      pdf.text('Phone: ' + bill.customerPhone, margin, y);
+      y += 5;
+    }
+
+    y += 4;
+    const tableX = margin;
+    const widths = [12, 72, 32, 18, 38];
+    const rowHeight = 8;
+    const headers = ['#', 'Description', 'Unit Price', 'Qty', 'Subtotal'];
+
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFillColor(235, 240, 246);
+    pdf.rect(tableX, y, widths.reduce((s, w) => s + w, 0), rowHeight, 'F');
+    let x = tableX;
+    headers.forEach((head, i) => {
+      pdf.rect(x, y, widths[i], rowHeight);
+      pdf.text(head, x + 2, y + 5.2);
+      x += widths[i];
+    });
+    y += rowHeight;
+
+    pdf.setFont('helvetica', 'normal');
+    (bill.items || []).forEach((item, index) => {
+      if (y > 260) {
+        pdf.addPage();
+        y = 16;
+      }
+      const subtotal = item.subtotal != null ? item.subtotal : Number(item.unitPrice || 0) * Number(item.qty || 0);
+      const cells = [
+        String(index + 1),
+        String(item.itemName || item.category || ''),
+        currency + Number(item.unitPrice || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 }),
+        String(item.qty || 1),
+        currency + Number(subtotal || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })
+      ];
+      x = tableX;
+      cells.forEach((cell, i) => {
+        pdf.rect(x, y, widths[i], rowHeight);
+        pdf.text(cell, x + 2, y + 5.2, { maxWidth: widths[i] - 4 });
+        x += widths[i];
+      });
+      y += rowHeight;
+    });
+
+    y += 8;
+    const totalX = pageWidth - margin - 72;
+    function totalLine(label, value, bold) {
+      if (bold) pdf.setFont('helvetica', 'bold');
+      pdf.text(label, totalX, y);
+      pdf.text(currency + Number(value || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 }), pageWidth - margin, y, { align: 'right' });
+      if (bold) pdf.setFont('helvetica', 'normal');
+      y += 6;
+    }
+
+    totalLine('Subtotal:', bill.subTotal, false);
+    if (Number(bill.taxAmount || 0) > 0) totalLine('GST:', bill.taxAmount, false);
+    if (Number(bill.discount || 0) > 0) totalLine('Discount:', -Number(bill.discount || 0), false);
+    totalLine('Total:', bill.totalAmount, true);
+
+    if (bill.paymentMethod) {
+      y += 2;
+      pdf.text('Payment Method: ' + bill.paymentMethod, margin, y);
+    }
+    if (bill.note) {
+      y += 7;
+      y = addWrappedPdfText(pdf, 'Note: ' + bill.note, margin, y, pageWidth - (margin * 2), 5);
+    }
+
+    return pdf.output('blob');
+  }
+
+  function getGstDriveDownloadUrl(bill) {
+    // Prefer the stored PDF URL
+    if (bill.invoicePdfUrl) return bill.invoicePdfUrl;
+    // Build from file ID if available
+    if (bill.invoiceFileId) return 'https://drive.google.com/uc?export=download&id=' + bill.invoiceFileId;
+    return null;
+  }
+
+  async function downloadAllGstPdfs() {
+    if (renderGstReport() === false) return;
+    const bills = currentGstBills;
+    if (!bills.length) {
+      showToast('No invoices found for selected month.', 'warning');
+      return;
+    }
+
+    // Filter only bills that have a real Drive PDF
+    const driveBills = bills.filter(b => getGstDriveDownloadUrl(b));
+    const skipped = bills.length - driveBills.length;
+
+    if (!driveBills.length) {
+      showToast('None of the bills have a Drive PDF saved. Generate invoices first during billing.', 'error');
+      return;
+    }
+
+    if (skipped > 0) {
+      showToast(`${skipped} bill(s) have no Drive PDF and will be skipped.`, 'warning');
+    }
+
+    showToast(`Opening ${driveBills.length} PDF(s) from Google Drive...`, 'success', 10000);
+
+    // Open each Drive PDF one by one with a delay to avoid popup blockers
+    for (let i = 0; i < driveBills.length; i++) {
+      const url = getGstDriveDownloadUrl(driveBills[i]);
+      // Small delay between each open to avoid browser blocking
+      if (i > 0) await new Promise(r => setTimeout(r, 1500));
+      window.open(url, '_blank');
+    }
+
+    showToast(`Opened ${driveBills.length} invoice PDF(s).` + (skipped ? ` ${skipped} skipped (no Drive PDF).` : ''), 'success');
   }
 
   function deleteBillConfirm(id) {

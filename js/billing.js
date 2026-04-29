@@ -222,6 +222,15 @@ function resetBillForm() {
 }
 
 // ---- Generate Invoice via Cloud (Google Apps Script) ----
+function returnToHomeAfterInvoice() {
+  var path = window.location.pathname || '';
+  if (!/create-bill\.html$/i.test(path)) return;
+
+  setTimeout(function() {
+    window.location.href = 'index.html';
+  }, 700);
+}
+
 function printBill(billId) {
   var bill = window.Storage && typeof Storage.getBillById === 'function'
     ? Storage.getBillById(billId)
@@ -229,6 +238,7 @@ function printBill(billId) {
 
   if (bill && bill.invoicePdfUrl) {
     window.open(bill.invoicePdfUrl, '_blank');
+    returnToHomeAfterInvoice();
     return;
   }
 

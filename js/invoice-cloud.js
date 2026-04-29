@@ -154,6 +154,10 @@
           if (typeof showToast === 'function') {
             showToast('Invoice generated and saved to bill #' + bill.billNo + '. If print dialog didn\'t appear, press Ctrl+P.', 'success');
           }
+
+          if (typeof returnToHomeAfterInvoice === 'function') {
+            returnToHomeAfterInvoice();
+          }
         })
         .catch(function (err) {
           console.error('Invoice generation failed:', err);

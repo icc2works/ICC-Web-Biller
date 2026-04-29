@@ -492,7 +492,7 @@ body::before {
 .container {
   position: relative;
   z-index: 1;
-  max-width: 1100px;
+  max-width: 1440px;
   margin: 0 auto;
   padding: 40px 32px 60px;
   margin-left: 250px;
@@ -826,10 +826,12 @@ textarea::placeholder {
   overflow-x: auto;
   border-radius: var(--radius-lg);
   border: 1px solid var(--border);
+  background: var(--bg-card);
 }
 
 table {
   width: 100%;
+  min-width: 760px;
   border-collapse: collapse;
   font-size: 13.5px;
 }
@@ -863,6 +865,80 @@ td {
   padding: 13px 16px;
   color: var(--text-primary);
   vertical-align: middle;
+}
+
+th,
+td {
+  overflow-wrap: break-word;
+}
+
+td[data-label="Bill No."],
+td[data-label="Date"],
+td[data-label="Date & Time"],
+td[data-label="Added On"],
+td[data-label="Phone"],
+td[data-label="Items"],
+td[data-label="Amount"],
+td[data-label="Subtotal"],
+td[data-label="Total"],
+td[data-label="Status"],
+td[data-label="Action"],
+td[data-label="Actions"] {
+  white-space: nowrap;
+}
+
+td[data-label="Actions"] > div,
+td[data-label="Action"] > div {
+  align-items: center;
+  flex-wrap: nowrap;
+}
+
+td[data-label="Actions"] .btn,
+td[data-label="Action"] .btn {
+  white-space: nowrap;
+}
+
+.reports-table {
+  min-width: 1040px;
+}
+
+.reports-table th:nth-child(1),
+.reports-table td:nth-child(1) {
+  width: 12%;
+}
+
+.reports-table th:nth-child(2),
+.reports-table td:nth-child(2) {
+  width: 18%;
+}
+
+.reports-table th:nth-child(3),
+.reports-table td:nth-child(3) {
+  width: 15%;
+}
+
+.reports-table th:nth-child(4),
+.reports-table td:nth-child(4) {
+  width: 7%;
+  text-align: center;
+}
+
+.reports-table th:nth-child(5),
+.reports-table td:nth-child(5),
+.reports-table th:nth-child(6),
+.reports-table td:nth-child(6) {
+  width: 11%;
+  text-align: right;
+}
+
+.reports-table th:nth-child(7),
+.reports-table td:nth-child(7) {
+  width: 13%;
+}
+
+.reports-table th:nth-child(8),
+.reports-table td:nth-child(8) {
+  width: 13%;
 }
 
 /* ===================== BADGES ===================== */
@@ -2234,6 +2310,17 @@ td {
     width: 100%;
   }
 
+  .table-wrap table,
+  .reports-table {
+    min-width: 0;
+  }
+
+  .reports-table th,
+  .reports-table td {
+    width: 100% !important;
+    text-align: left !important;
+  }
+
   .table-wrap thead tr {
     display: none;
     /* Hide headers */
@@ -2248,12 +2335,13 @@ td {
   }
 
   .table-wrap td[data-label] {
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: minmax(70px, 92px) minmax(0, 1fr);
+    column-gap: 12px;
     align-items: center;
     padding: 8px 0 !important;
     border-bottom: 1px dashed rgba(255, 255, 255, 0.05) !important;
-    text-align: right;
+    text-align: left;
     white-space: normal !important;
   }
 
@@ -2267,13 +2355,40 @@ td {
 
   .table-wrap td[data-label]::before {
     content: attr(data-label);
+    grid-column: 1;
+    grid-row: 1 / span 4;
+    align-self: center;
     font-weight: 700;
     text-transform: uppercase;
     font-size: 10px;
     color: var(--text-muted);
     text-align: left;
-    margin-right: 12px;
-    flex-shrink: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .table-wrap td[data-label] > * {
+    grid-column: 2;
+    min-width: 0;
+    justify-self: start;
+  }
+
+  .table-wrap td[data-label="Customer"],
+  .table-wrap td[data-label="Date & Time"],
+  .table-wrap td[data-label="Actions"] {
+    align-items: start;
+  }
+
+  .table-wrap td[data-label="Bill No."] span,
+  .table-wrap td[data-label="Date & Time"] {
+    overflow-wrap: normal;
+    word-break: normal;
+  }
+
+  .table-wrap td[data-label="Actions"] > div,
+  .table-wrap td[data-label="Action"] > div {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
   }
 
   .table-wrap td:not([data-label]) {

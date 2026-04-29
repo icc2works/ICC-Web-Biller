@@ -154,3 +154,15 @@ document.addEventListener('DOMContentLoaded', () => {
   setActiveNav();
   startClock('navClock');
 });
+
+window.addEventListener('storage-cloud-ready', () => {
+  if (typeof loadDashboard === 'function') loadDashboard();
+  if (typeof loadCustomers === 'function') loadCustomers(document.getElementById('customerSearch')?.value || '');
+  if (typeof loadReports === 'function') loadReports();
+  if (typeof renderCatalog === 'function') renderCatalog();
+  if (typeof loadSettings === 'function') loadSettings();
+  if (typeof updateStorageStats === 'function') updateStorageStats();
+  if (typeof populateCustomerSelect === 'function') {
+    populateCustomerSelect('billCustomer', document.getElementById('billCustomer')?.value || '');
+  }
+});

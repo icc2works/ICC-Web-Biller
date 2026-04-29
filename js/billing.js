@@ -260,9 +260,9 @@ function generateTestInvoice() {
 
   // Temporarily store the test bill so the invoice generator can find it
   try {
-    var bills = JSON.parse(localStorage.getItem(KEYS.BILLS) || '[]');
+    var bills = Storage.getBills();
     bills.push(testBill);
-    localStorage.setItem(KEYS.BILLS, JSON.stringify(bills));
+    Storage.saveBills(bills);
     console.log('Test bill stored:', testBill.id);
   } catch (e) {
     console.error('Error storing test bill:', e);
@@ -284,9 +284,9 @@ function generateTestInvoice() {
   // Clean up: remove the test bill from storage after a delay
   setTimeout(function() {
     try {
-      var storedBills = JSON.parse(localStorage.getItem(KEYS.BILLS) || '[]');
+      var storedBills = Storage.getBills();
       storedBills = storedBills.filter(function(b) { return b.id !== testBill.id; });
-      localStorage.setItem(KEYS.BILLS, JSON.stringify(storedBills));
+      Storage.saveBills(storedBills);
       console.log('Test bill cleaned up');
     } catch (e) {
       console.error('Error cleaning up test bill:', e);

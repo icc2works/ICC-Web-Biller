@@ -1,12 +1,16 @@
 // ===================== STORAGE MODULE =====================
-// Centralized LocalStorage abstraction for all data operations
+// Centralized storage abstraction for all data operations.
+// Data is cached in localStorage and synced to CloudDB when configured.
 
 const KEYS = {
   CUSTOMERS: 'cnc_customers',
   BILLS: 'cnc_bills',
   SETTINGS: 'cnc_settings',
-  BILL_SEQ: 'cnc_bill_sequence'
+  BILL_SEQ: 'cnc_bill_sequence',
+  INVOICE_TEMPLATE: 'cnc_invoice_template'
 };
+
+const SYNC_KEYS = [KEYS.CUSTOMERS, KEYS.BILLS, KEYS.SETTINGS, KEYS.BILL_SEQ, KEYS.INVOICE_TEMPLATE];
 
 // ===================== DEFAULT ITEM CATALOG =====================
 const DEFAULT_CATALOG = {
@@ -59,6 +63,9 @@ const DEFAULT_CATALOG = {
 };
 
 const Storage = {
+  isSyncingFromCloud: false,
+  cloudReady: false,
+
   // ---- GENERIC ----
   get(key, fallback = null) {
     try {
@@ -70,11 +77,90 @@ const Storage = {
   set(key, value) {
     try {
       localStorage.setItem(key, JSON.stringify(value));
+      this.syncKeyToCloud(key, value);
       return true;
     } catch (e) {
       console.error('Storage error:', e);
       return false;
     }
+  },
+
+  remove(key) {
+    localStorage.removeItem(key);
+    if (SYNC_KEYS.includes(key) && window.CloudDB && !this.isSyncingFromCloud) {
+      window.CloudDB.removeData(key);
+    }
+  },
+
+  syncKeyToCloud(key, value) {
+    if (!SYNC_KEYS.includes(key) || this.isSyncingFromCloud) return;
+    if (window.CloudDB) window.CloudDB.setData(key, value);
+  },
+
+  getLocalCloudPayload() {
+    return SYNC_KEYS.reduce((out, key) => {
+      const value = this.get(key, null);
+      if (value !== null && value !== undefined) out[key] = value;
+      return out;
+    }, {});
+  },
+
+  mergeListsById(localList, cloudList) {
+    const map = new Map();
+    (cloudList || []).forEach(item => { if (item && item.id) map.set(item.id, item); });
+    (localList || []).forEach(item => { if (item && item.id) map.set(item.id, { ...map.get(item.id), ...item }); });
+    return Array.from(map.values()).sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+  },
+
+  mergeCloudPayload(localData, cloudData) {
+    const merged = { ...(cloudData || {}), ...(localData || {}) };
+    merged[KEYS.CUSTOMERS] = this.mergeListsById(localData[KEYS.CUSTOMERS], cloudData && cloudData[KEYS.CUSTOMERS]);
+    merged[KEYS.BILLS] = this.mergeListsById(localData[KEYS.BILLS], cloudData && cloudData[KEYS.BILLS]);
+    merged[KEYS.SETTINGS] = {
+      ...((cloudData && cloudData[KEYS.SETTINGS]) || {}),
+      ...((localData && localData[KEYS.SETTINGS]) || {})
+    };
+    merged[KEYS.BILL_SEQ] = Math.max(
+      Number(localData[KEYS.BILL_SEQ] || 0),
+      Number(cloudData && cloudData[KEYS.BILL_SEQ] || 0)
+    );
+    if (localData[KEYS.INVOICE_TEMPLATE] === undefined && cloudData && cloudData[KEYS.INVOICE_TEMPLATE] !== undefined) {
+      merged[KEYS.INVOICE_TEMPLATE] = cloudData[KEYS.INVOICE_TEMPLATE];
+    }
+    return merged;
+  },
+
+  applyCloudPayload(data) {
+    this.isSyncingFromCloud = true;
+    try {
+      SYNC_KEYS.forEach(key => {
+        if (data && data[key] !== undefined && data[key] !== null) {
+          localStorage.setItem(key, JSON.stringify(data[key]));
+        }
+      });
+    } finally {
+      this.isSyncingFromCloud = false;
+    }
+  },
+
+  async initCloudSync() {
+    if (!window.CloudDB) return false;
+    const connected = await window.CloudDB.init();
+    if (!connected) return false;
+
+    const localData = this.getLocalCloudPayload();
+    const cloudData = await window.CloudDB.getAll();
+    const merged = cloudData ? this.mergeCloudPayload(localData, cloudData) : localData;
+
+    this.applyCloudPayload(merged);
+    await window.CloudDB.setAll(merged);
+    window.CloudDB.subscribe(data => {
+      this.applyCloudPayload(data || {});
+      window.dispatchEvent(new CustomEvent('storage-cloud-ready', { detail: window.CloudDB.status() }));
+    });
+    this.cloudReady = true;
+    window.dispatchEvent(new CustomEvent('storage-cloud-ready', { detail: window.CloudDB.status() }));
+    return true;
   },
 
   // ---- CUSTOMERS ----
@@ -287,15 +373,20 @@ const Storage = {
 
   // ---- INVOICE TEMPLATE ----
   getInvoiceTemplate() {
-    return this.get('cnc_invoice_template', null);
+    return this.get(KEYS.INVOICE_TEMPLATE, null);
   },
 
   saveInvoiceTemplate(tpl) {
-    this.set('cnc_invoice_template', tpl);
+    this.set(KEYS.INVOICE_TEMPLATE, tpl);
   },
 
   resetInvoiceTemplate() {
-    localStorage.removeItem('cnc_invoice_template');
+    this.remove(KEYS.INVOICE_TEMPLATE);
+  },
+
+  clearAll() {
+    SYNC_KEYS.forEach(key => localStorage.removeItem(key));
+    if (window.CloudDB) window.CloudDB.setAll({});
   }
 };
 
@@ -303,3 +394,5 @@ const Storage = {
 window.Storage = Storage;
 window.KEYS = KEYS;
 window.DEFAULT_CATALOG = DEFAULT_CATALOG;
+
+Storage.initCloudSync().catch(error => console.error('Cloud sync failed:', error));

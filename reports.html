@@ -260,6 +260,14 @@
     </div>
   </div>
 
+  <!-- Search -->
+  <div class="search-bar" style="display:flex;gap:12px;align-items:center;margin-bottom:20px;">
+    <div style="flex:1;position:relative;">
+      <input type="text" id="invoiceSearch" placeholder="🔍 Search by bill number, customer name, or phone…" autocomplete="off"
+        style="width:100%;padding:12px 16px;border-radius:var(--radius-md);border:1px solid var(--border);background:var(--bg-card);color:var(--text-primary);font-size:14px;transition:var(--transition);">
+    </div>
+  </div>
+
   <!-- Quick Period Buttons -->
   <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;">
     <button class="btn btn-ghost btn-sm" onclick="setPeriod('today')">Today</button>
@@ -417,6 +425,12 @@
     }
 
     loadReports();
+
+    // Live search
+    const searchBox = document.getElementById('invoiceSearch');
+    if (searchBox) {
+      searchBox.addEventListener('input', () => loadReports());
+    }
   });
 
   function applyFilters() { loadReports(); }
@@ -426,6 +440,7 @@
     document.getElementById('filterTo').value   = '';
     document.getElementById('filterCustomer').value = '';
     document.getElementById('filterStatus').value   = '';
+    document.getElementById('invoiceSearch').value  = '';
     loadReports();
   }
 
@@ -457,10 +472,16 @@
     const to       = document.getElementById('filterTo').value;
     const custId   = document.getElementById('filterCustomer').value;
     const status   = document.getElementById('filterStatus').value;
+    const search   = (document.getElementById('invoiceSearch').value || '').trim().toLowerCase();
 
     if (from)   bills = bills.filter(b => new Date(b.createdAt) >= new Date(from));
     if (to)     bills = bills.filter(b => new Date(b.createdAt) <= new Date(to + 'T23:59:59'));
     if (custId) bills = bills.filter(b => b.customerId === custId);
+    if (search) bills = bills.filter(b =>
+      (b.billNo || '').toLowerCase().includes(search) ||
+      (b.customerName || '').toLowerCase().includes(search) ||
+      (b.customerPhone || '').includes(search)
+    );
     if (status) bills = bills.filter(b => b.status === status);
 
     currentBills = bills;

@@ -11,6 +11,24 @@
 
 <body>
 
+  <!-- Admin Password Lock Screen -->
+  <div id="adminLockScreen" style="position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:var(--bg-main,#0a0e1a);">
+    <div style="background:var(--bg-card,#141926);border:1px solid var(--border,#1e2536);border-radius:16px;padding:40px 36px;max-width:400px;width:90%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.4);">
+      <div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#4f9eff,#7c5cfc);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:28px;">🔒</div>
+      <h2 style="margin:0 0 8px;font-size:22px;color:var(--text-primary,#fff);">Admin Access</h2>
+      <p style="margin:0 0 24px;font-size:13px;color:var(--text-muted,#6b7a99);">Enter password to access the admin dashboard</p>
+      <input type="password" id="adminPasswordInput" placeholder="Enter password" autocomplete="off"
+        style="width:100%;padding:14px 16px;border-radius:10px;border:1.5px solid var(--border,#1e2536);background:var(--bg-main,#0a0e1a);color:var(--text-primary,#fff);font-size:15px;text-align:center;letter-spacing:3px;margin-bottom:16px;outline:none;transition:border-color 0.2s;"
+        onkeydown="if(event.key==='Enter')unlockAdmin()">
+      <div id="adminPasswordError" style="color:#ff5c5c;font-size:13px;margin-bottom:12px;min-height:20px;"></div>
+      <div style="display:flex;gap:10px;">
+        <a href="index.html" class="btn btn-secondary" style="flex:1;padding:12px;border-radius:10px;text-decoration:none;text-align:center;">← Back</a>
+        <button class="btn btn-primary" style="flex:1;padding:12px;border-radius:10px;" onclick="unlockAdmin()">🔓 Unlock</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="adminContent" style="display:none;">
   <nav class="navbar">
     <a href="index.html" class="navbar-brand">
       <div class="brand-icon">ICC</div>
@@ -105,7 +123,7 @@
             <th>Items</th>
             <th>Amount</th>
             <th>Status</th>
-            <th>Action</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody id="recentBillsBody">
@@ -123,6 +141,59 @@
     </div>
 
   </div>
+  </div><!-- end adminContent -->
+
+  <!-- Bill Detail Modal -->
+  <div class="modal-overlay" id="billDetailModal">
+    <div class="modal" style="max-width:700px;">
+      <div class="modal-header">
+        <div class="modal-title" id="billDetailTitle">Bill Details</div>
+        <button class="modal-close" onclick="closeModal('billDetailModal')">✕</button>
+      </div>
+      <div id="billDetailContent"></div>
+    </div>
+  </div>
+
+  <!-- Edit Bill Modal -->
+  <div class="modal-overlay" id="editBillModal">
+    <div class="modal" style="max-width:480px;">
+      <div class="modal-header">
+        <div class="modal-title" id="editBillTitle">✏️ Edit Bill</div>
+        <button class="modal-close" onclick="closeModal('editBillModal')">✕</button>
+      </div>
+      <input type="hidden" id="editBillId">
+      <div class="form-group">
+        <label for="editBillStatus">Status</label>
+        <select id="editBillStatus">
+          <option value="paid">✅ Paid</option>
+          <option value="pending">⏳ Pending</option>
+          <option value="partial">🔷 Partial</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="editBillPayMethod">Payment Method</label>
+        <select id="editBillPayMethod">
+          <option value="Cash">Cash</option>
+          <option value="UPI">UPI</option>
+          <option value="Card">Card</option>
+          <option value="Bank Transfer">Bank Transfer</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="editBillNote">Note</label>
+        <textarea id="editBillNote" rows="3" placeholder="Optional note…"></textarea>
+      </div>
+      <div class="form-group">
+        <label for="editBillDiscount">Discount (₹)</label>
+        <input type="number" id="editBillDiscount" min="0" step="1" placeholder="0">
+      </div>
+      <div style="display:flex;gap:10px;margin-top:12px;">
+        <button class="btn btn-secondary" style="flex:1;" onclick="closeModal('editBillModal')">Cancel</button>
+        <button class="btn btn-primary" style="flex:1;" onclick="saveEditBill()">💾 Save Changes</button>
+      </div>
+    </div>
+  </div>
 
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
@@ -130,12 +201,44 @@
   <script src="js/storage.js"></script>
   <script src="js/app.js"></script>
   <script>
+    const ADMIN_PASSWORD = localStorage.getItem('cnc_admin_password') || 'icc2025';
+
+    function unlockAdmin() {
+      const currentPassword = localStorage.getItem('cnc_admin_password') || 'icc2025';
+      const input = document.getElementById('adminPasswordInput');
+      const error = document.getElementById('adminPasswordError');
+      if (input.value === currentPassword) {
+        sessionStorage.setItem('admin_unlocked', 'true');
+        document.getElementById('adminLockScreen').style.display = 'none';
+        document.getElementById('adminContent').style.display = 'block';
+        loadDashboard();
+      } else {
+        error.textContent = '❌ Incorrect password. Try again.';
+        input.value = '';
+        input.style.borderColor = '#ff5c5c';
+        setTimeout(() => { input.style.borderColor = ''; }, 1500);
+      }
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
-      loadDashboard();
+      // Check if already unlocked in this session
+      if (sessionStorage.getItem('admin_unlocked') === 'true') {
+        document.getElementById('adminLockScreen').style.display = 'none';
+        document.getElementById('adminContent').style.display = 'block';
+        loadDashboard();
+      } else {
+        document.getElementById('adminPasswordInput').focus();
+      }
       const hour = new Date().getHours();
       const greet = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
       document.getElementById('greetLine').textContent = `${greet}. Here is your business overview.`;
     });
+
+    function escAdminHtml(str) {
+      const d = document.createElement('div');
+      d.appendChild(document.createTextNode(str || ''));
+      return d.innerHTML;
+    }
 
     function loadDashboard() {
       const stats = Storage.getDashboardStats();
@@ -157,7 +260,7 @@
       <tr class="fade-in">
         <td data-label="Bill No."><span style="font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--accent);">${b.billNo}</span></td>
         <td data-label="Customer">
-          <div style="font-weight:600;">${b.customerName}</div>
+          <div style="font-weight:600;">${escAdminHtml(b.customerName)}</div>
           <div style="font-size:11px;color:var(--text-muted);">${b.customerPhone || ''}</div>
         </td>
         <td data-label="Date" style="font-size:12px;color:var(--text-secondary);">${formatDate(b.createdAt)}</td>
@@ -166,18 +269,30 @@
           ${sym}${b.totalAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
         </td>
         <td data-label="Status">
-          <span class="badge ${b.status === 'paid' ? 'badge-success' : 'badge-warning'}">
-            ${b.status.charAt(0).toUpperCase() + b.status.slice(1)}
-          </span>
+          <select onchange="updateBillStatus('${b.id}',this.value)"
+            style="padding:5px 8px;font-size:12px;border-radius:6px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-primary);width:110px;">
+            <option value="paid"    ${b.status==='paid'   ?'selected':''}>✅ Paid</option>
+            <option value="pending" ${b.status==='pending'?'selected':''}>⏳ Pending</option>
+            <option value="partial" ${b.status==='partial'?'selected':''}>🔷 Partial</option>
+          </select>
         </td>
-        <td data-label="Action">
+        <td data-label="Actions">
           <div style="display:flex;gap:6px;flex-wrap:wrap;">
-            ${b.invoicePdfUrl ? `<button class="btn btn-sm btn-success" onclick="viewInvoicePdf('${b.id}')">PDF</button>` : ''}
-            <button class="btn btn-sm btn-secondary" onclick="reprintBill('${b.id}')">Print</button>
+            <button class="btn btn-sm btn-secondary" onclick="viewBillDetail('${b.id}')" title="View">👁️</button>
+            <button class="btn btn-sm btn-secondary" onclick="openEditBill('${b.id}')" title="Edit">✏️</button>
+            ${b.invoicePdfUrl ? `<button class="btn btn-sm btn-success" onclick="viewInvoicePdf('${b.id}')" title="PDF">📄</button>` : ''}
+            <button class="btn btn-sm btn-secondary" onclick="reprintBill('${b.id}')" title="Print">🖨️</button>
+            <button class="btn btn-sm btn-danger" onclick="deleteBillConfirm('${b.id}')" title="Delete">🗑️</button>
           </div>
         </td>
       </tr>
     `).join('');
+    }
+
+    function updateBillStatus(id, status) {
+      Storage.updateBill(id, { status });
+      showToast('Bill status updated to ' + status, 'success');
+      loadDashboard();
     }
 
     function reprintBill(id) {
@@ -187,6 +302,103 @@
     function viewInvoicePdf(id) {
       const bill = Storage.getBillById(id);
       if (bill && bill.invoicePdfUrl) window.open(bill.invoicePdfUrl, '_blank');
+    }
+
+    function deleteBillConfirm(id) {
+      const b = Storage.getBillById(id);
+      if (!b) return;
+      confirmAction(`Delete bill ${b.billNo}? This cannot be undone.`, () => {
+        Storage.deleteBill(id);
+        showToast('Bill deleted', 'error');
+        loadDashboard();
+      });
+    }
+
+    function viewBillDetail(id) {
+      const bill = Storage.getBillById(id);
+      const settings = Storage.getSettings();
+      const sym = settings.currency || '₹';
+      if (!bill) return;
+
+      document.getElementById('billDetailTitle').textContent = `📄 ${bill.billNo} — ${bill.customerName}`;
+
+      const rows = bill.items.map((item, i) => `
+        <tr>
+          <td style="padding:9px 12px;">${i + 1}</td>
+          <td style="padding:9px 12px;color:var(--text-muted);font-size:12px;">${item.category || ''}</td>
+          <td style="padding:9px 12px;font-weight:600;">${item.itemName || item.type || ''}</td>
+          <td style="padding:9px 12px;font-family:'JetBrains Mono',monospace;">${sym}${(item.unitPrice || 0).toLocaleString('en-IN')}</td>
+          <td style="padding:9px 12px;text-align:right;">${item.qty || 1}</td>
+          <td style="padding:9px 12px;font-weight:700;color:var(--accent-3);">${sym}${(item.subtotal || 0).toLocaleString('en-IN', {maximumFractionDigits:2})}</td>
+        </tr>
+      `).join('');
+
+      const discount = bill.discount || 0;
+
+      document.getElementById('billDetailContent').innerHTML = `
+        <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px;font-size:13px;color:var(--text-secondary);">
+          <span>📅 ${formatDateTime(bill.createdAt)}</span>
+          <span>👤 ${escAdminHtml(bill.customerName)}${bill.customerPhone ? ' · ' + bill.customerPhone : ''}</span>
+          <span>💳 ${bill.paymentMethod || 'Cash'}</span>
+          <span class="badge ${bill.status==='paid'?'badge-success':'badge-warning'}">${bill.status}</span>
+        </div>
+        <div class="table-wrap" style="margin-bottom:16px;">
+          <table>
+            <thead><tr>
+              <th>#</th><th>Category</th><th>Item Name</th><th>Unit Price</th><th>Qty</th><th>Subtotal</th>
+            </tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+        <div class="total-section" style="max-width:300px;margin-left:auto;">
+          <div class="total-row"><span>Total Price</span><span>${sym}${bill.subTotal.toLocaleString('en-IN',{maximumFractionDigits:2})}</span></div>
+          ${bill.taxRate > 0 ? `<div class="total-row"><span>Tax (${bill.taxRate}%)</span><span>${sym}${bill.taxAmount.toLocaleString('en-IN',{maximumFractionDigits:2})}</span></div>` : ''}
+          ${discount > 0 ? `<div class="total-row"><span style="color:var(--warning);">Discount</span><span style="color:var(--warning);">-${sym}${discount.toLocaleString('en-IN',{maximumFractionDigits:2})}</span></div>` : ''}
+          <div class="total-row grand"><span>Final Price</span><span>${sym}${bill.totalAmount.toLocaleString('en-IN',{maximumFractionDigits:2})}</span></div>
+        </div>
+        ${bill.note ? `<div style="margin-top:14px;padding:12px;background:rgba(255,217,61,0.08);border-radius:8px;font-size:13px;color:var(--text-secondary);">📝 ${escAdminHtml(bill.note)}</div>` : ''}
+        <div style="display:flex;gap:10px;margin-top:20px;">
+          <button class="btn btn-secondary" onclick="openEditBill('${bill.id}');closeModal('billDetailModal');">✏️ Edit</button>
+          ${bill.invoicePdfUrl ? `<button class="btn btn-success" onclick="viewInvoicePdf('${bill.id}')">📄 PDF</button>` : ''}
+          <button class="btn btn-danger" onclick="deleteBillConfirm('${bill.id}');closeModal('billDetailModal');">🗑️ Delete</button>
+          <button class="btn btn-secondary" onclick="closeModal('billDetailModal')">Close</button>
+        </div>
+      `;
+      openModal('billDetailModal');
+    }
+
+    function openEditBill(id) {
+      const bill = Storage.getBillById(id);
+      if (!bill) return;
+      document.getElementById('editBillId').value = id;
+      document.getElementById('editBillTitle').textContent = `✏️ Edit ${bill.billNo}`;
+      document.getElementById('editBillStatus').value = bill.status || 'paid';
+      document.getElementById('editBillPayMethod').value = bill.paymentMethod || 'Cash';
+      document.getElementById('editBillNote').value = bill.note || '';
+      document.getElementById('editBillDiscount').value = bill.discount || 0;
+      openModal('editBillModal');
+    }
+
+    function saveEditBill() {
+      const id = document.getElementById('editBillId').value;
+      if (!id) return;
+      const bill = Storage.getBillById(id);
+      if (!bill) return;
+
+      const status = document.getElementById('editBillStatus').value;
+      const paymentMethod = document.getElementById('editBillPayMethod').value;
+      const note = document.getElementById('editBillNote').value.trim();
+      const discount = parseFloat(document.getElementById('editBillDiscount').value) || 0;
+
+      // Recalculate total if discount changed
+      const taxAmt = bill.taxAmount || 0;
+      let totalAmount = bill.subTotal + taxAmt - discount;
+      if (totalAmount < 0) totalAmount = 0;
+
+      Storage.updateBill(id, { status, paymentMethod, note, discount: +discount.toFixed(2), totalAmount: +totalAmount.toFixed(2) });
+      showToast('Bill updated successfully!', 'success');
+      closeModal('editBillModal');
+      loadDashboard();
     }
   </script>
 </body>

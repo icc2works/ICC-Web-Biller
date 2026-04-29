@@ -78,6 +78,86 @@
 
     <!-- Category filter tabs -->
     <div id="catalogCatTabs" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;"></div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settings — Indian CNC Carving</title>
+  <meta name="description" content="Configure company profile, tax rates, item types, and data management.">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="no-sidebar">
+
+<div class="container" style="max-width:780px;">
+
+  <div class="page-header flex-between">
+    <div>
+      <div class="section-label">Configuration</div>
+      <h1 class="page-title">Settings</h1>
+      <p class="page-subtitle">Company info, tax, item types, and data management</p>
+    </div>
+    <div style="display:flex; gap:12px; align-items:center;">
+      <a href="index.html" class="btn btn-secondary btn-icon" title="Back to Home" style="font-size:20px; padding:8px 12px; border-radius:50%;">🏠</a>
+      <button class="btn btn-primary" onclick="saveAllSettings()">💾 Save All Changes</button>
+    </div>
+  </div>
+
+
+  <!-- ═══════════════ ADD NEW ITEM ═══════════════ -->
+  <div class="settings-section">
+    <div class="settings-section-title">➕ Add New Item</div>
+    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">
+      Add products to your catalog. Default prices auto-fill on the bill page (still editable per bill).
+    </p>
+
+    <!-- Add Item Form -->
+    <div style="background:linear-gradient(135deg, rgba(79,158,255,0.08), rgba(124,92,252,0.06));border:1.5px solid var(--border-accent);border-radius:var(--radius-lg);padding:24px;margin-bottom:20px;">
+      <div class="grid-2 mb-16">
+        <div class="form-group" style="margin-bottom:0;">
+          <label for="newItemCat">📂 Category</label>
+          <select id="newItemCat"></select>
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <label for="newItemName">📦 Item Name</label>
+          <input type="text" id="newItemName" placeholder="e.g. Special Door, Jannel Set">
+        </div>
+      </div>
+      <div class="grid-2" style="align-items:flex-end;">
+        <div class="form-group" style="margin-bottom:0;">
+          <label for="newItemPrice">💰 Default Price (₹)</label>
+          <input type="number" id="newItemPrice" placeholder="Enter price" min="0" step="1">
+        </div>
+        <button class="btn btn-primary btn-lg" onclick="addCatalogItemUI()" style="height:48px;">
+          ➕ Add Item
+        </button>
+      </div>
+    </div>
+
+    <!-- Add New Category -->
+    <div style="background:rgba(0,212,170,0.06);border:1.5px solid rgba(0,212,170,0.2);border-radius:var(--radius-md);padding:16px;">
+      <div style="font-size:12px;font-weight:700;color:var(--accent-3);margin-bottom:10px;text-transform:uppercase;letter-spacing:1px;">📁 Add New Category</div>
+      <div class="grid-2" style="align-items:flex-end;">
+        <div class="form-group" style="margin-bottom:0;">
+          <label for="newCatName">Category Name</label>
+          <input type="text" id="newCatName" placeholder="e.g. Frames, Pillars, Custom Work…">
+        </div>
+        <button class="btn btn-success btn-lg" onclick="addCatalogCategoryUI()" style="height:48px;">
+          ➕ Add Category
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ ITEM LIST ═══════════════ -->
+  <div class="settings-section">
+    <div class="settings-section-title">🗂️ Your Items</div>
+    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">
+      Browse and manage all items by category. Click a price to edit it inline.
+    </p>
+
+    <!-- Category filter tabs -->
+    <div id="catalogCatTabs" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;"></div>
 
     <!-- Catalog table -->
     <div id="catalogTableWrap" class="table-wrap" style="margin-bottom:16px;"></div>
@@ -141,6 +221,34 @@
     </div>
   </div>
 
+  <!-- ═══════════════ ADMIN PASSWORD ═══════════════ -->
+  <div class="settings-section">
+    <div class="settings-section-title">🔐 Admin Password</div>
+    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">
+      Change the admin dashboard password. You need the master password to make changes.
+    </p>
+    <div style="background:linear-gradient(135deg, rgba(124,92,252,0.08), rgba(79,158,255,0.06));border:1.5px solid rgba(124,92,252,0.2);border-radius:var(--radius-lg);padding:24px;">
+      <div class="form-group" style="margin-bottom:20px;">
+        <label for="masterPasswordInput">🔑 Master Password</label>
+        <input type="password" id="masterPasswordInput" placeholder="Enter master password to authorize" autocomplete="off">
+      </div>
+      <hr style="border:none;border-top:1px solid var(--border);margin:0 0 20px;">
+      <div class="grid-2 mb-16">
+        <div class="form-group" style="margin-bottom:0;">
+          <label for="newAdminPassword">🔒 New Password</label>
+          <input type="password" id="newAdminPassword" placeholder="New admin password" autocomplete="off">
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <label for="confirmAdminPassword">🔒 Confirm Password</label>
+          <input type="password" id="confirmAdminPassword" placeholder="Re-enter password" autocomplete="off">
+        </div>
+      </div>
+      <button class="btn btn-primary btn-lg" onclick="changeAdminPassword()" style="width:100%;">
+        🔐 Change Admin Password
+      </button>
+    </div>
+  </div>
+
   <!-- ═══════════════ THEME APPEARANCE ═══════════════ -->
   <div class="settings-section">
     <div class="settings-section-title">🎨 Theme Appearance</div>
@@ -160,7 +268,6 @@
             <div style="font-size:11px;color:var(--text-secondary);">Easy on the eyes</div>
           </div>
         </div>
-        <!-- Mini color preview -->
         <div style="display:flex;gap:6px;margin-top:8px;">
           <div style="width:24px;height:24px;border-radius:6px;background:#0a0e1a;border:1px solid rgba(255,255,255,0.15);" title="Background"></div>
           <div style="width:24px;height:24px;border-radius:6px;background:#0f1629;border:1px solid rgba(255,255,255,0.15);" title="Card"></div>
@@ -182,7 +289,6 @@
             <div style="font-size:11px;color:var(--text-secondary);">Clean and bright</div>
           </div>
         </div>
-        <!-- Mini color preview -->
         <div style="display:flex;gap:6px;margin-top:8px;">
           <div style="width:24px;height:24px;border-radius:6px;background:#f0f2f5;border:1px solid rgba(0,0,0,0.12);" title="Background"></div>
           <div style="width:24px;height:24px;border-radius:6px;background:#ffffff;border:1px solid rgba(0,0,0,0.12);" title="Card"></div>
@@ -481,6 +587,31 @@
       showToast('All data cleared. Reloading…', 'error');
       setTimeout(() => location.reload(), 1500);
     });
+  }
+
+
+  // ---- Change Admin Password ----
+  function changeAdminPassword() {
+    const MASTER_PASSWORD = '12121212';
+    const master  = document.getElementById('masterPasswordInput').value;
+    const newPass = document.getElementById('newAdminPassword').value;
+    const confirm = document.getElementById('confirmAdminPassword').value;
+
+    if (!master) { showToast('Please enter the master password', 'warning'); return; }
+    if (master !== MASTER_PASSWORD) { showToast('❌ Incorrect master password', 'error'); return; }
+    if (!newPass) { showToast('Please enter a new admin password', 'warning'); return; }
+    if (newPass.length < 4) { showToast('Password must be at least 4 characters', 'warning'); return; }
+    if (newPass !== confirm) { showToast('❌ Passwords do not match', 'error'); return; }
+
+    localStorage.setItem('cnc_admin_password', newPass);
+    // Clear any existing admin session so new password takes effect
+    sessionStorage.removeItem('admin_unlocked');
+
+    document.getElementById('masterPasswordInput').value = '';
+    document.getElementById('newAdminPassword').value = '';
+    document.getElementById('confirmAdminPassword').value = '';
+
+    showToast('✅ Admin password changed successfully!', 'success');
   }
 
 

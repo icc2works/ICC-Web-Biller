@@ -181,6 +181,7 @@
 
 /* ---- Forms ---- */
 [data-theme="light"] input,
+[data-theme="light"] input[type="password"],
 [data-theme="light"] select,
 [data-theme="light"] textarea {
   background: #f9fafb;
@@ -769,6 +770,7 @@ input[type="number"],
 input[type="date"],
 input[type="tel"],
 input[type="email"],
+input[type="password"],
 select,
 textarea {
   width: 100%;

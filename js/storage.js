@@ -7,10 +7,11 @@ const KEYS = {
   BILLS: 'cnc_bills',
   SETTINGS: 'cnc_settings',
   BILL_SEQ: 'cnc_bill_sequence',
-  INVOICE_TEMPLATE: 'cnc_invoice_template'
+  INVOICE_TEMPLATE: 'cnc_invoice_template',
+  ADMIN_PASSWORD: 'cnc_admin_password'
 };
 
-const SYNC_KEYS = [KEYS.CUSTOMERS, KEYS.BILLS, KEYS.SETTINGS, KEYS.BILL_SEQ, KEYS.INVOICE_TEMPLATE];
+const SYNC_KEYS = [KEYS.CUSTOMERS, KEYS.BILLS, KEYS.SETTINGS, KEYS.BILL_SEQ, KEYS.INVOICE_TEMPLATE, KEYS.ADMIN_PASSWORD];
 
 // ===================== DEFAULT ITEM CATALOG =====================
 const DEFAULT_CATALOG = {
@@ -382,6 +383,21 @@ const Storage = {
 
   resetInvoiceTemplate() {
     this.remove(KEYS.INVOICE_TEMPLATE);
+  },
+
+  // ---- ADMIN PASSWORD ----
+  getAdminPassword() {
+    const stored = this.get(KEYS.ADMIN_PASSWORD, null);
+    if (stored === null) {
+      // Initialize default password and sync to cloud
+      this.set(KEYS.ADMIN_PASSWORD, 'icc2025');
+      return 'icc2025';
+    }
+    return stored;
+  },
+
+  setAdminPassword(password) {
+    return this.set(KEYS.ADMIN_PASSWORD, password);
   },
 
   clearAll() {

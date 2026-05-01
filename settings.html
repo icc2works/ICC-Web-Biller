@@ -523,7 +523,7 @@
     if (newPass.length < 4) { showToast('Password must be at least 4 characters', 'warning'); return; }
     if (newPass !== confirm) { showToast('❌ Passwords do not match', 'error'); return; }
 
-    localStorage.setItem('cnc_admin_password', newPass);
+    Storage.setAdminPassword(newPass);
     // Clear any existing admin session so new password takes effect
     sessionStorage.removeItem('admin_unlocked');
 

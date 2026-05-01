@@ -889,8 +889,8 @@ td[data-label="Actions"] {
   white-space: nowrap;
 }
 
-td[data-label="Actions"] > div,
-td[data-label="Action"] > div {
+td[data-label="Actions"]>div,
+td[data-label="Action"]>div {
   align-items: center;
   flex-wrap: nowrap;
 }
@@ -1798,7 +1798,7 @@ td {
 }
 
 /* ---------- Mobile breakpoint (≤ 768px) ---------- */
-@media (max-width: 768px) {
+@media (max-width: 400px) {
 
   /* ---- Top Bar ---- */
   .navbar {
@@ -2394,7 +2394,7 @@ td {
     overflow-wrap: anywhere;
   }
 
-  .table-wrap td[data-label] > * {
+  .table-wrap td[data-label]>* {
     grid-column: 2;
     min-width: 0;
     justify-self: start;
@@ -2412,8 +2412,8 @@ td {
     word-break: normal;
   }
 
-  .table-wrap td[data-label="Actions"] > div,
-  .table-wrap td[data-label="Action"] > div {
+  .table-wrap td[data-label="Actions"]>div,
+  .table-wrap td[data-label="Action"]>div {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
@@ -2428,10 +2428,12 @@ td {
   .settings-section .table-wrap {
     border: none !important;
     background: transparent !important;
+    overflow: hidden;
   }
 
   .settings-section .table-wrap table {
     table-layout: auto;
+    min-width: 0;
   }
 
   .settings-section .table-wrap tbody tr {
@@ -2441,6 +2443,7 @@ td {
     align-items: center;
     padding: 14px 16px;
     margin-bottom: 10px;
+    overflow: hidden;
   }
 
   .settings-section .table-wrap td[data-label] {
@@ -2449,6 +2452,8 @@ td {
     gap: 8px;
     padding: 4px 0 !important;
     border-bottom: none !important;
+    min-width: 0;
+    width: auto;
   }
 
   .settings-section .table-wrap td[data-label]::before {
@@ -2471,19 +2476,23 @@ td {
   }
 
   .settings-section .table-wrap td[data-label="Price (₹)"] input {
-    width: 140px;
+    width: 120px;
     min-height: 40px;
     padding: 8px 12px;
-    font-size: 15px;
+    font-size: 14px;
   }
 
   .settings-section .table-wrap td[data-label="Action"] {
     grid-column: 2;
     justify-self: end;
+    align-self: center;
   }
 
   .settings-section .table-wrap td[data-label="Action"] .btn {
-    min-height: 40px;
+    min-height: 38px;
+    white-space: nowrap;
+    padding: 8px 14px;
+    font-size: 12px;
   }
 
   body.menu-open {
@@ -2740,6 +2749,7 @@ body.no-sidebar .page-header {
 /* ===================== SIMPLE HOME ===================== */
 .simple-home {
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 .home-shell {
@@ -2749,6 +2759,7 @@ body.no-sidebar .page-header {
   padding: 28px 0;
   display: flex;
   flex-direction: column;
+  overflow-x: hidden;
 }
 
 .home-header {
@@ -2951,7 +2962,7 @@ body.no-sidebar .page-header {
 
 .home-actions {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
   gap: 16px;
 }
 
@@ -3063,7 +3074,7 @@ body.no-sidebar .page-header {
   .home-menu {
     width: 100%;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+    grid-template-columns: repeat(3, 1fr);
     gap: 8px;
   }
 
@@ -3101,19 +3112,25 @@ body.no-sidebar .page-header {
 
 @media (max-width: 620px) {
   .home-shell {
-    width: min(100% - 24px, 520px);
+    width: calc(100% - 24px);
+    max-width: 520px;
     padding: 14px 0 24px;
   }
 
   .home-logo {
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
-    font-size: 14px;
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+
+  .home-brand {
+    gap: 10px;
   }
 
   .home-brand strong {
-    font-size: 16px;
+    font-size: 15px;
   }
 
   .home-brand small {
@@ -3121,20 +3138,24 @@ body.no-sidebar .page-header {
   }
 
   .home-menu {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, 1fr);
   }
 
   .home-menu-btn {
-    min-height: 58px;
-    grid-template-columns: auto 1fr;
+    min-height: 56px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     justify-content: center;
-    text-align: left;
-    padding: 9px 10px;
+    text-align: center;
+    padding: 8px 6px;
+    gap: 4px;
+    font-size: 10.5px;
   }
 
   .menu-icon {
-    width: 24px;
-    height: 24px;
+    width: 22px;
+    height: 22px;
   }
 
   .home-main {
@@ -3143,11 +3164,11 @@ body.no-sidebar .page-header {
   }
 
   .home-title-group h1 {
-    font-size: 34px;
+    font-size: 32px;
   }
 
   .home-title-group p {
-    font-size: 15px;
+    font-size: 14px;
   }
 
   .home-actions {
@@ -3155,12 +3176,13 @@ body.no-sidebar .page-header {
   }
 
   .home-action {
-    min-height: 112px;
-    padding: 18px;
+    min-height: 100px;
+    padding: 16px;
+    gap: 14px;
   }
 
   .home-action strong {
-    font-size: 23px;
+    font-size: 21px;
   }
 
   .home-action small {
@@ -3176,25 +3198,37 @@ body.no-sidebar .page-header {
 
 @media (max-width: 380px) {
   .home-shell {
-    width: min(100% - 18px, 360px);
+    width: calc(100% - 16px);
+    max-width: 360px;
+  }
+
+  .home-menu {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
   }
 
   .home-menu-btn {
-    min-height: 54px;
-    font-size: 10.5px;
-    padding: 8px;
+    min-height: 50px;
+    font-size: 9.5px;
+    padding: 6px 4px;
+    gap: 3px;
+  }
+
+  .menu-icon {
+    width: 20px;
+    height: 20px;
   }
 
   .home-title-group h1 {
-    font-size: 30px;
+    font-size: 28px;
   }
 
   .home-action {
-    min-height: 102px;
-    padding: 15px;
+    min-height: 92px;
+    padding: 14px;
   }
 
   .home-action strong {
-    font-size: 21px;
+    font-size: 19px;
   }
 }

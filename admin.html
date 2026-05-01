@@ -105,6 +105,43 @@
       </a>
     </div>
 
+    <!-- ═══════════════ ADMIN SETTINGS ═══════════════ -->
+    <div class="section-label">Admin Settings</div>
+    <div class="settings-section mb-24" style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+        <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,rgba(255,217,61,0.15),rgba(255,107,107,0.15));display:flex;align-items:center;justify-content:center;font-size:20px;">🔢</div>
+        <div>
+          <div style="font-size:15px;font-weight:700;color:var(--text-primary);">Invoice Number Reset</div>
+          <div style="font-size:12px;color:var(--text-secondary);">Reset or set a custom starting invoice sequence number</div>
+        </div>
+      </div>
+
+      <div style="background:rgba(79,158,255,0.06);border:1px solid rgba(79,158,255,0.15);border-radius:var(--radius-md);padding:14px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+        <div>
+          <div style="font-size:11px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;">Current Sequence</div>
+          <div style="font-size:22px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--accent);" id="currentSeqDisplay">0</div>
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;">Next Invoice Will Be</div>
+          <div style="font-size:14px;font-weight:600;font-family:'JetBrains Mono',monospace;color:var(--accent-3);" id="nextInvoicePreview">—</div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;">
+        <div class="form-group" style="margin-bottom:0;flex:1;min-width:160px;">
+          <label for="resetSeqInput">New Starting Number</label>
+          <input type="number" id="resetSeqInput" min="0" step="1" placeholder="e.g. 0, 100, 500…" style="font-family:'JetBrains Mono',monospace;">
+        </div>
+        <button class="btn btn-warning" onclick="resetInvoiceSequence()" style="height:48px;white-space:nowrap;">
+          🔄 Reset Invoice Number
+        </button>
+      </div>
+
+      <div style="margin-top:12px;font-size:11px;color:var(--text-muted);line-height:1.5;">
+        💡 Setting to <strong>0</strong> means the next bill will be <strong>#001</strong>. Existing bills are not affected.
+      </div>
+    </div>
+
     <div class="flex-between mb-16">
       <div>
         <div class="section-label">Recent Activity</div>
@@ -201,10 +238,10 @@
   <script src="js/storage.js"></script>
   <script src="js/app.js"></script>
   <script>
-    const ADMIN_PASSWORD = localStorage.getItem('cnc_admin_password') || 'icc2025';
+    const ADMIN_PASSWORD = Storage.getAdminPassword();
 
     function unlockAdmin() {
-      const currentPassword = localStorage.getItem('cnc_admin_password') || 'icc2025';
+      const currentPassword = Storage.getAdminPassword();
       const input = document.getElementById('adminPasswordInput');
       const error = document.getElementById('adminPasswordError');
       if (input.value === currentPassword) {
@@ -250,6 +287,9 @@
       document.getElementById('pendingAmt').innerHTML = sym + stats.pendingAmt.toLocaleString('en-IN', { maximumFractionDigits: 2 });
       document.getElementById('totalBills').textContent = stats.totalBills;
       document.getElementById('todayBillCount').textContent = stats.bills_today + ' bills today';
+
+      // Update invoice sequence display
+      updateSeqDisplay();
 
       const bills = Storage.getBills().slice(0, 8);
       const tbody = document.getElementById('recentBillsBody');
@@ -399,6 +439,39 @@
       showToast('Bill updated successfully!', 'success');
       closeModal('editBillModal');
       loadDashboard();
+    }
+
+    // ---- Invoice Sequence Reset ----
+    function updateSeqDisplay() {
+      const currentSeq = Storage.get(KEYS.BILL_SEQ, 0);
+      document.getElementById('currentSeqDisplay').textContent = currentSeq;
+      const nextSeq = currentSeq + 1;
+      const now = new Date();
+      const mm = String(now.getMonth() + 1).padStart(2, '0');
+      const dd = String(now.getDate()).padStart(2, '0');
+      document.getElementById('nextInvoicePreview').textContent = 'ICC-' + mm + dd + '-' + String(nextSeq).padStart(3, '0');
+    }
+
+    function resetInvoiceSequence() {
+      const input = document.getElementById('resetSeqInput');
+      let newSeq = parseInt(input.value, 10);
+      if (isNaN(newSeq) || newSeq < 0) newSeq = 0;
+
+      const nextNum = newSeq + 1;
+      const now = new Date();
+      const mm = String(now.getMonth() + 1).padStart(2, '0');
+      const dd = String(now.getDate()).padStart(2, '0');
+      const preview = 'ICC-' + mm + dd + '-' + String(nextNum).padStart(3, '0');
+
+      confirmAction(
+        `Reset invoice sequence to ${newSeq}? The next bill will be ${preview}. Existing bills are not affected.`,
+        () => {
+          Storage.set(KEYS.BILL_SEQ, newSeq);
+          input.value = '';
+          updateSeqDisplay();
+          showToast(`Invoice sequence reset to ${newSeq}. Next bill: ${preview}`, 'success');
+        }
+      );
     }
   </script>
 </body>

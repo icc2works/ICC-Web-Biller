@@ -75,20 +75,10 @@
    */
   window.generateCloudInvoice = function (billId) {
     try {
-      // Try fetching from Storage first (preferred), fallback to raw localStorage
+      // Fetch bill from cloud-backed Storage
       var bill = null;
       if (window.Storage && typeof window.Storage.getBillById === 'function') {
         bill = window.Storage.getBillById(billId);
-      }
-      if (!bill) {
-        // Fallback: search in localStorage directly
-        var bills = JSON.parse(localStorage.getItem('cnc_bills') || '[]');
-        bill = bills.find(function (b) { return b.id === billId; });
-      }
-      if (!bill) {
-        // Also try legacy key
-        var legacyBills = JSON.parse(localStorage.getItem('icc_bills') || '[]');
-        bill = legacyBills.find(function (b) { return b.id === billId; });
       }
 
       if (!bill) {

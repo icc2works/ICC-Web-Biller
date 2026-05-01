@@ -120,13 +120,16 @@ function animateCount(el, target, prefix = '₹', duration = 900) {
 
 // ---- Theme Management ----
 function initTheme() {
-  var saved = localStorage.getItem('cnc_theme') || 'dark';
-  applyTheme(saved);
+  var settings = window.Storage && typeof Storage.getSettings === 'function' ? Storage.getSettings() : {};
+  applyTheme(settings.theme || 'dark', false);
 }
 
-function applyTheme(theme) {
+function applyTheme(theme, persist) {
   document.documentElement.setAttribute('data-theme', theme);
-  localStorage.setItem('cnc_theme', theme);
+  if (persist && window.Storage && typeof Storage.saveSettings === 'function') {
+    var settings = Storage.getSettings();
+    Storage.saveSettings({ ...settings, theme: theme });
+  }
   // Update toggle buttons if they exist on the page
   var darkBtn = document.getElementById('themeDarkBtn');
   var lightBtn = document.getElementById('themeLightBtn');
@@ -138,11 +141,11 @@ function applyTheme(theme) {
 
 function toggleTheme() {
   var current = document.documentElement.getAttribute('data-theme') || 'dark';
-  applyTheme(current === 'dark' ? 'light' : 'dark');
+  applyTheme(current === 'dark' ? 'light' : 'dark', true);
 }
 
 function setTheme(theme) {
-  applyTheme(theme);
+  applyTheme(theme, true);
   if (typeof showToast === 'function') {
     showToast((theme === 'dark' ? '🌙 Dark' : '☀️ Light') + ' theme applied', 'success');
   }
@@ -156,6 +159,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 window.addEventListener('storage-cloud-ready', () => {
+  initTheme();
   if (typeof loadDashboard === 'function') loadDashboard();
   if (typeof loadCustomers === 'function') loadCustomers(document.getElementById('customerSearch')?.value || '');
   if (typeof loadReports === 'function') loadReports();

@@ -136,7 +136,7 @@
       </div>
       <div>
         <div style="font-size:24px;font-weight:800;color:var(--accent-2);" id="storageDisp">~0 KB</div>
-        <div style="font-size:12px;color:var(--text-muted);">Storage Used</div>
+        <div style="font-size:12px;color:var(--text-muted);">Cloud Status</div>
       </div>
     </div>
   </div>
@@ -222,7 +222,7 @@
   </div>
 
   <div style="text-align:center;color:var(--text-muted);font-size:12px;margin-top:24px;">
-    Indian CNC Carving Billing System v1.0 • Built with ❤️ • Data stored locally in your browser
+    Indian CNC Carving Billing System v1.0 - Data stored in Firebase cloud database
   </div>
 
 </div>
@@ -247,7 +247,7 @@
   function loadSettings() {
     const s = Storage.getSettings();
     // Load theme toggle state
-    var currentTheme = localStorage.getItem('cnc_theme') || 'dark';
+    var currentTheme = s.theme || document.documentElement.getAttribute('data-theme') || 'dark';
     var darkBtn = document.getElementById('themeDarkBtn');
     var lightBtn = document.getElementById('themeLightBtn');
     if (darkBtn && lightBtn) {
@@ -438,13 +438,8 @@
   function updateStorageStats() {
     document.getElementById('billCountDisp').textContent = Storage.getBills().length;
     document.getElementById('custCountDisp').textContent = Storage.getCustomers().length;
-    let total = 0;
-    for (let key in localStorage) {
-      if (localStorage.hasOwnProperty(key)) {
-        total += (localStorage.getItem(key).length + key.length) * 2;
-      }
-    }
-    document.getElementById('storageDisp').textContent = '~' + Math.round(total / 1024) + ' KB';
+    var cloudStatus = window.CloudDB ? window.CloudDB.status() : { enabled: false, connected: false };
+    document.getElementById('storageDisp').textContent = cloudStatus.connected ? 'Cloud' : (cloudStatus.enabled ? 'Syncing' : 'Disabled');
   }
 
   // ---- Backup / Restore ----
@@ -524,8 +519,6 @@
     if (newPass !== confirm) { showToast('❌ Passwords do not match', 'error'); return; }
 
     Storage.setAdminPassword(newPass);
-    // Clear any existing admin session so new password takes effect
-    sessionStorage.removeItem('admin_unlocked');
 
     document.getElementById('masterPasswordInput').value = '';
     document.getElementById('newAdminPassword').value = '';

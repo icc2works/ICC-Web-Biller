@@ -1,4 +1,4 @@
-﻿// ===================== INVOICE GENERATION =====================
+// ===================== INVOICE GENERATION =====================
 // Uses ICC invoice.xlsx template from assets
 // Fills details and generates PDF in modern format
 
@@ -349,8 +349,9 @@
    */
   window.generateXLSXInvoice = function(billId) {
     try {
-      var bills = JSON.parse(localStorage.getItem('icc_bills') || '[]');
-      var bill = bills.find(function(b) { return b.id === billId; });
+      var bill = window.Storage && typeof window.Storage.getBillById === 'function'
+        ? window.Storage.getBillById(billId)
+        : null;
 
       if (!bill) {
         showToast('Bill not found', 'error');
@@ -566,20 +567,21 @@
 })();
 // ===================== INVOICE PDF GENERATOR =====================
 // Uses jsPDF to create professional PDF invoices
-// Generates PDFs from bill data stored in localStorage
+// Generates PDFs from bill data stored in cloud
 
 (function () {
   'use strict';
 
   /**
    * Generate PDF invoice from bill data
-   * @param {string} billId - The bill ID to fetch from localStorage
+   * @param {string} billId - The bill ID to fetch from Storage
    */
   window.generateXLSXInvoice = function(billId) {
     try {
-      // Fetch the bill from localStorage
-      var bills = JSON.parse(localStorage.getItem('icc_bills') || '[]');
-      var bill = bills.find(function(b) { return b.id === billId; });
+      // Fetch the bill from cloud-backed Storage
+      var bill = window.Storage && typeof window.Storage.getBillById === 'function'
+        ? window.Storage.getBillById(billId)
+        : null;
 
       if (!bill) {
         showToast('Bill not found', 'error');

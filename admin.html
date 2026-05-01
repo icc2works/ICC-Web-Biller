@@ -245,7 +245,6 @@
       const input = document.getElementById('adminPasswordInput');
       const error = document.getElementById('adminPasswordError');
       if (input.value === currentPassword) {
-        sessionStorage.setItem('admin_unlocked', 'true');
         document.getElementById('adminLockScreen').style.display = 'none';
         document.getElementById('adminContent').style.display = 'block';
         loadDashboard();
@@ -258,14 +257,7 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-      // Check if already unlocked in this session
-      if (sessionStorage.getItem('admin_unlocked') === 'true') {
-        document.getElementById('adminLockScreen').style.display = 'none';
-        document.getElementById('adminContent').style.display = 'block';
-        loadDashboard();
-      } else {
-        document.getElementById('adminPasswordInput').focus();
-      }
+      document.getElementById('adminPasswordInput').focus();
       const hour = new Date().getHours();
       const greet = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
       document.getElementById('greetLine').textContent = `${greet}. Here is your business overview.`;

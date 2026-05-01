@@ -1,6 +1,7 @@
 // ===================== STORAGE MODULE =====================
 // Centralized storage abstraction for all data operations.
-// Data is cached in localStorage and synced to CloudDB when configured.
+// Data is stored exclusively in CloudDB (Firebase Realtime Database).
+// An in-memory cache is used for fast synchronous reads.
 
 const KEYS = {
   CUSTOMERS: 'cnc_customers',
@@ -63,22 +64,27 @@ const DEFAULT_CATALOG = {
   ]
 };
 
+// ===================== IN-MEMORY CACHE =====================
+// All reads go through this cache. Writes update both the cache and CloudDB.
+const _cache = {};
+
 const Storage = {
-  isSyncingFromCloud: false,
   cloudReady: false,
 
-  // ---- GENERIC ----
+  // ---- GENERIC (in-memory cache) ----
   get(key, fallback = null) {
     try {
-      const val = localStorage.getItem(key);
-      return val ? JSON.parse(val) : fallback;
+      const val = _cache[key];
+      return val !== undefined && val !== null ? val : fallback;
     } catch { return fallback; }
   },
 
   set(key, value) {
     try {
-      localStorage.setItem(key, JSON.stringify(value));
-      this.syncKeyToCloud(key, value);
+      // Update in-memory cache
+      _cache[key] = value;
+      // Persist to cloud
+      this._saveToCloud(key, value);
       return true;
     } catch (e) {
       console.error('Storage error:', e);
@@ -87,17 +93,18 @@ const Storage = {
   },
 
   remove(key) {
-    localStorage.removeItem(key);
-    if (SYNC_KEYS.includes(key) && window.CloudDB && !this.isSyncingFromCloud) {
+    delete _cache[key];
+    if (window.CloudDB) {
       window.CloudDB.removeData(key);
     }
   },
 
-  syncKeyToCloud(key, value) {
-    if (!SYNC_KEYS.includes(key) || this.isSyncingFromCloud) return;
+  _saveToCloud(key, value) {
+    if (!SYNC_KEYS.includes(key)) return;
     if (window.CloudDB) window.CloudDB.setData(key, value);
   },
 
+  // Build a payload from the in-memory cache for cloud operations
   getLocalCloudPayload() {
     return SYNC_KEYS.reduce((out, key) => {
       const value = this.get(key, null);
@@ -131,16 +138,16 @@ const Storage = {
     return merged;
   },
 
+  // Apply data from the cloud into the in-memory cache
   applyCloudPayload(data) {
-    this.isSyncingFromCloud = true;
     try {
       SYNC_KEYS.forEach(key => {
         if (data && data[key] !== undefined && data[key] !== null) {
-          localStorage.setItem(key, JSON.stringify(data[key]));
+          _cache[key] = data[key];
         }
       });
-    } finally {
-      this.isSyncingFromCloud = false;
+    } catch (e) {
+      console.error('Error applying cloud payload:', e);
     }
   },
 
@@ -149,16 +156,18 @@ const Storage = {
     const connected = await window.CloudDB.init();
     if (!connected) return false;
 
-    const localData = this.getLocalCloudPayload();
+    // Load data from cloud into cache
     const cloudData = await window.CloudDB.getAll();
-    const merged = cloudData ? this.mergeCloudPayload(localData, cloudData) : localData;
+    if (cloudData) {
+      this.applyCloudPayload(cloudData);
+    }
 
-    this.applyCloudPayload(merged);
-    await window.CloudDB.setAll(merged);
+    // Subscribe to realtime updates
     window.CloudDB.subscribe(data => {
       this.applyCloudPayload(data || {});
       window.dispatchEvent(new CustomEvent('storage-cloud-ready', { detail: window.CloudDB.status() }));
     });
+
     this.cloudReady = true;
     window.dispatchEvent(new CustomEvent('storage-cloud-ready', { detail: window.CloudDB.status() }));
     return true;
@@ -251,6 +260,7 @@ const Storage = {
       companyPhone2: '9786876576',
       website: 'https://indiancnccarving.com/',
       companyGST: '',
+      theme: 'dark',
       currency: '₹',
       defaultRate: '',
       taxRate: 0,
@@ -401,7 +411,7 @@ const Storage = {
   },
 
   clearAll() {
-    SYNC_KEYS.forEach(key => localStorage.removeItem(key));
+    SYNC_KEYS.forEach(key => delete _cache[key]);
     if (window.CloudDB) window.CloudDB.setAll({});
   }
 };

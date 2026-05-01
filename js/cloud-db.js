@@ -1,6 +1,5 @@
 // ===================== CLOUD DATABASE CONFIG =====================
-// Fill this config with your Firebase Realtime Database project details.
-// Keep enabled=false until the Firebase values are added.
+// Firebase Realtime Database is the only persistent storage for the app.
 
 window.CNC_CLOUD_DB_CONFIG = window.CNC_CLOUD_DB_CONFIG || {
   enabled: true,
@@ -18,8 +17,7 @@ window.CNC_CLOUD_DB_CONFIG = window.CNC_CLOUD_DB_CONFIG || {
 };
 
 // ===================== CLOUD DATABASE ADAPTER =====================
-// Uses Firebase Realtime Database when configured, and quietly falls back to
-// browser storage when it is not configured or the network is unavailable.
+// Uses Firebase Realtime Database for all persistent data.
 
 (function() {
   const state = {

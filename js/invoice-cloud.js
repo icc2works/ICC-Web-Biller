@@ -217,13 +217,74 @@
     win.document.close();
   }
 
+  // ---- Progress Overlay Helpers ----
+  function showProgressOverlay(title, sub) {
+    var overlay = document.getElementById('invoiceProgressOverlay');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'invoiceProgressOverlay';
+      overlay.className = 'progress-overlay';
+      overlay.innerHTML = 
+        '<div class="progress-card">' +
+          '<div class="spinner"></div>' +
+          '<div class="progress-title" id="progressTitle">Generating Invoice</div>' +
+          '<div class="progress-sub" id="progressSub">Connecting to cloud server...</div>' +
+          '<div class="progress-bar-wrap">' +
+            '<div class="progress-bar-fill active" id="progressBar"></div>' +
+          '</div>' +
+          '<div id="manualDownloadArea" style="display:none;margin-top:24px;">' +
+            '<p style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">If your download didn\'t start, click below:</p>' +
+            '<a id="manualDownloadBtn" class="btn btn-primary btn-sm" style="width:100%;text-decoration:none;">📥 Download PDF</a>' +
+          '</div>' +
+        '</div>';
+      document.body.appendChild(overlay);
+    }
+    document.getElementById('progressTitle').textContent = title || 'Generating Invoice';
+    document.getElementById('progressSub').textContent = sub || 'Please wait...';
+    document.getElementById('progressBar').style.width = '0%';
+    
+    // Trigger reflow for animation
+    overlay.offsetHeight; 
+    overlay.classList.add('show');
+    return overlay;
+  }
+
+  function updateProgress(percent, sub) {
+    var bar = document.getElementById('progressBar');
+    var subEl = document.getElementById('progressSub');
+    if (bar) bar.style.width = percent + '%';
+    if (subEl && sub) subEl.textContent = sub;
+  }
+
+  function hideProgressOverlay() {
+    var overlay = document.getElementById('invoiceProgressOverlay');
+    if (overlay) overlay.classList.remove('show');
+  }
+
+  function forceDownload(url, filename) {
+    try {
+      var win = window.open(url, '_blank');
+      if (!win || win.closed || typeof win.closed === 'undefined') {
+        // If popup blocked, use a link
+        var a = document.createElement('a');
+        a.href = url;
+        a.target = '_blank';
+        a.download = filename || 'invoice.pdf';
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(function() { document.body.removeChild(a); }, 100);
+      }
+    } catch (e) {
+      console.error('Download trigger failed:', e);
+    }
+  }
+
   /**
    * Generate invoice using Google Apps Script and open PDF for printing.
    * @param {string} billId - The bill ID to generate invoice for
    */
   window.generateCloudInvoice = function (billId) {
     try {
-      // Fetch bill from cloud-backed Storage
       var bill = null;
       if (window.Storage && typeof window.Storage.getBillById === 'function') {
         bill = window.Storage.getBillById(billId);
@@ -231,90 +292,81 @@
 
       if (!bill) {
         if (typeof showToast === 'function') showToast('Bill not found', 'error');
-        console.error('Bill not found:', billId);
         return;
       }
 
       var url = buildInvoiceUrl(bill);
       if (!getAppsScriptUrl()) {
-        if (typeof showToast === 'function') showToast('Invoice URL is empty for this company. Add it in Settings.', 'error');
+        if (typeof showToast === 'function') showToast('Invoice URL is empty. Check Settings.', 'error');
         return;
       }
 
-      // Show loading message
-      if (typeof showToast === 'function') {
-        showToast('Generating invoice... Please wait.', 'success');
-      }
-
-      console.log('Calling Apps Script URL:', url);
+      // Show Progress Overlay
+      showProgressOverlay('Generating Invoice', 'Connecting to cloud server...');
+      updateProgress(30, 'Sending data to Google Drive...');
 
       fetch(url)
         .then(function (res) { return res.text(); })
         .then(function (data) {
-          console.log('Apps Script Response:', data);
-
-          // Check if response is a valid Drive URL
+          updateProgress(70, 'Building PDF document...');
+          
           if (!data || !data.startsWith('http')) {
-            var scriptError = getScriptErrorMessage(data || 'Unknown Apps Script error');
+            hideProgressOverlay();
+            var scriptError = getScriptErrorMessage(data || 'Unknown error');
             openFallbackInvoice(bill, scriptError);
-            if (typeof showToast === 'function') {
-              showToast('Cloud invoice failed: ' + scriptError + '. Opened local preview.', 'warning', 7000);
-            }
-            console.error('Invalid response from Apps Script:', data);
+            if (typeof showToast === 'function') showToast('Cloud invoice failed. Opened local preview.', 'warning');
             return;
           }
 
-          // Extract file ID from Google Drive URL
           var match = data.match(/\/d\/(.*?)\//);
           if (!match) {
-            if (typeof showToast === 'function') {
-              showToast('Invalid Drive URL received', 'error');
-            }
-            console.error('Could not extract file ID from:', data);
+            hideProgressOverlay();
+            console.error('Invalid Drive URL');
             return;
           }
 
           var fileId = match[1];
-
-          // Build direct PDF download URL
           var pdfUrl = 'https://drive.google.com/uc?export=download&id=' + fileId;
+          var fileName = getInvoiceFileName(bill) + '.pdf';
 
           saveInvoiceUrls(bill.id, data, pdfUrl, fileId);
           window.Storage.updateBill(bill.id, { invoiceFileName: getInvoiceFileName(bill) });
 
-          // Open PDF in new window
-          var win = window.open(pdfUrl, '_blank');
+          updateProgress(100, 'Download starting...');
+          
+          // Setup manual button just in case
+          var manualBtn = document.getElementById('manualDownloadBtn');
+          var manualArea = document.getElementById('manualDownloadArea');
+          if (manualBtn && manualArea) {
+            manualBtn.href = pdfUrl;
+            manualBtn.download = fileName;
+            manualArea.style.display = 'block';
+          }
 
-          // Try auto-print after a delay (best effort — may be blocked by browser)
-          setTimeout(function () {
-            try {
-              if (win && !win.closed) {
-                win.print();
-              }
-            } catch (e) {
-              console.log('Auto-print not available or blocked by browser');
+          // Force download
+          forceDownload(pdfUrl, fileName);
+          
+          setTimeout(function() {
+            if (typeof showToast === 'function') {
+              showToast('Invoice generated! Check your downloads.', 'success');
             }
-          }, 3000);
-
-          if (typeof showToast === 'function') {
-            showToast('Invoice generated and saved to bill #' + bill.billNo + '. If print dialog didn\'t appear, press Ctrl+P.', 'success');
-          }
-
-          if (typeof returnToHomeAfterInvoice === 'function') {
-            returnToHomeAfterInvoice();
-          }
+            // Keep overlay open for a few seconds so they can see the manual button if needed
+            setTimeout(function() {
+              hideProgressOverlay();
+              if (typeof returnToHomeAfterInvoice === 'function') {
+                returnToHomeAfterInvoice();
+              }
+            }, 3000);
+          }, 1000);
         })
         .catch(function (err) {
+          hideProgressOverlay();
           console.error('Invoice generation failed:', err);
-          if (typeof showToast === 'function') {
-            showToast('Invoice generation failed: ' + err.message, 'error');
-          }
+          if (typeof showToast === 'function') showToast('Generation failed: ' + err.message, 'error');
         });
     } catch (err) {
+      hideProgressOverlay();
       console.error('Error in generateCloudInvoice:', err);
-      if (typeof showToast === 'function') {
-        showToast('Error generating invoice: ' + err.message, 'error');
-      }
     }
   };
 

@@ -127,14 +127,14 @@ function addCarvinoItem(prefill) {
     '<select class="item-name" onchange="onItemChange(this,\'' + id + '\')">' +
       buildItemOptions(defCat, defItem) +
     '</select>' +
-    '<select class="size-unit" onchange="calculateTotal()">' +
+    '<select class="size-unit" onchange="onUnitChange(this,\'' + id + '\')">' +
       '<option value="inch"' + (defUnit === 'inch' ? ' selected' : '') + '>Inch</option>' +
       '<option value="mm"' + (defUnit === 'mm' ? ' selected' : '') + '>MM</option>' +
+      '<option value="auto"' + (defUnit === 'auto' || autoSqft ? ' selected' : '') + '>Auto</option>' +
     '</select>' +
     '<input type="number" class="item-height" placeholder="Height" min="0" step="0.01" value="' + (prefill.height || '') + '" oninput="calculateTotal()">' +
     '<input type="number" class="item-width" placeholder="Width" min="0" step="0.01" value="' + (prefill.width || '') + '" oninput="calculateTotal()">' +
     '<div class="sqft-box">' +
-      '<label class="auto-sqft"><input type="checkbox" class="auto-sqft-input" onchange="onAutoSqftChange(this,\'' + id + '\')"' + (autoSqft ? ' checked' : '') + '> Auto</label>' +
       '<input type="number" class="item-sqft" placeholder="Sqft" min="0" step="0.01" value="' + (prefill.sqft || '') + '" oninput="calculateTotal()">' +
     '</div>' +
     '<input type="number" class="item-price" placeholder="Rate" min="0" step="0.01" value="' + (prefill.unitPrice || '') + '" oninput="calculateTotal()" title="Rate per sqft">' +
@@ -182,7 +182,7 @@ function onItemChange(itemSelect, rowId) {
   calculateTotal();
 }
 
-function onAutoSqftChange(input, rowId) {
+function onUnitChange(select, rowId) {
   var row = document.getElementById(rowId);
   if (!row) return;
   applyAutoSqftState(row);
@@ -190,15 +190,18 @@ function onAutoSqftChange(input, rowId) {
 }
 
 function applyAutoSqftState(row) {
-  var auto = row.querySelector('.auto-sqft-input') && row.querySelector('.auto-sqft-input').checked;
-  ['.item-height', '.item-width', '.size-unit'].forEach(function(selector) {
+  var unitSelect = row.querySelector('.size-unit');
+  var isAuto = unitSelect && unitSelect.value === 'auto';
+  
+  ['.item-height', '.item-width'].forEach(function(selector) {
     var el = row.querySelector(selector);
-    if (el) el.disabled = auto;
+    if (el) el.disabled = isAuto;
   });
+  
   var sqft = row.querySelector('.item-sqft');
   if (sqft) {
-    sqft.readOnly = !auto;
-    if (auto) sqft.value = '1';
+    sqft.readOnly = !isAuto;
+    if (isAuto && (!sqft.value || sqft.value === '0')) sqft.value = '1';
   }
 }
 
@@ -211,11 +214,13 @@ function removeItem(id) {
 }
 
 function getCarvinoSqft(row) {
-  var auto = row.querySelector('.auto-sqft-input') && row.querySelector('.auto-sqft-input').checked;
+  var unitSelect = row.querySelector('.size-unit');
+  var unit = unitSelect ? unitSelect.value : 'inch';
   var sqftInput = row.querySelector('.item-sqft');
-  if (auto) {
-    if (sqftInput) sqftInput.value = '1';
-    return 1;
+  
+  if (unit === 'auto') {
+    var val = parseFloat(sqftInput ? sqftInput.value : 0) || 1;
+    return val;
   }
 
   var height = parseFloat(row.querySelector('.item-height') && row.querySelector('.item-height').value) || 0;
@@ -303,13 +308,13 @@ function saveBill() {
     var rowTotal;
 
     if (carvino) {
-      var auto = row.querySelector('.auto-sqft-input') && row.querySelector('.auto-sqft-input').checked;
+      var sizeUnit = row.querySelector('.size-unit') && row.querySelector('.size-unit').value || 'inch';
+      var isAuto = sizeUnit === 'auto';
       var height = parseFloat(row.querySelector('.item-height') && row.querySelector('.item-height').value) || 0;
       var width = parseFloat(row.querySelector('.item-width') && row.querySelector('.item-width').value) || 0;
-      var sizeUnit = row.querySelector('.size-unit') && row.querySelector('.size-unit').value || 'inch';
       var sqft = getCarvinoSqft(row);
       rowTotal = sqft * unitPrice * qty;
-      if (!category || !itemName || unitPrice <= 0 || qty <= 0 || (!auto && (height <= 0 || width <= 0 || sqft <= 0))) hasInvalid = true;
+      if (!category || !itemName || unitPrice <= 0 || qty <= 0 || (!isAuto && (height <= 0 || width <= 0 || sqft <= 0))) hasInvalid = true;
       items.push({
         siNo: index + 1,
         category,
@@ -320,7 +325,7 @@ function saveBill() {
         height,
         width,
         sqft,
-        autoSqft: auto,
+        autoSqft: isAuto,
         unitPrice,
         ratePerSqft: unitPrice,
         qty,

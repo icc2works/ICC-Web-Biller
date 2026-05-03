@@ -137,6 +137,11 @@ function setTheme(theme) {
 
 function renderCompanySwitcher() {
   if (!window.Storage || typeof Storage.getCompanyProfiles !== 'function') return;
+  
+  // Only show switcher on Home page
+  const isHomePage = /index\.html$|^ \/ $/.test(window.location.pathname) || document.body.classList.contains('simple-home');
+  if (!isHomePage) return;
+
   if (document.getElementById('companySwitcher')) return;
   const profiles = Storage.getCompanyProfiles();
   if (!profiles || profiles.length < 2) return;

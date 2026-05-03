@@ -1317,7 +1317,7 @@ td[data-label="Action"] .btn {
 
 .carvino-item-header,
 .carvino-item-row {
-  grid-template-columns: 130px 120px 82px 82px 82px 112px 96px 64px 96px 40px;
+  grid-template-columns: 120px 1fr 70px 70px 70px 96px 85px 60px 85px 36px;
 }
 
 .sqft-box {
@@ -1976,10 +1976,39 @@ td {
   .filter-bar .form-group {
     min-width: 100%;
   }
+
+  /* ---- Carvino Table Responsive (Tablet) ---- */
+  .carvino-item-header {
+    display: none !important;
+  }
+
+  .carvino-item-row {
+    grid-template-columns: 1fr 1fr !important;
+    grid-template-areas:
+      "cat cat"
+      "name name"
+      "unit sqft"
+      "height width"
+      "price qty"
+      "total remove" !important;
+    gap: 10px !important;
+    padding: 16px !important;
+  }
+
+  .carvino-item-row > .item-cat { grid-area: cat; }
+  .carvino-item-row > .item-name { grid-area: name; }
+  .carvino-item-row > .size-unit { grid-area: unit; }
+  .carvino-item-row > .sqft-box { grid-area: sqft; }
+  .carvino-item-row > .item-height { grid-area: height; }
+  .carvino-item-row > .item-width { grid-area: width; }
+  .carvino-item-row > .item-price { grid-area: price; }
+  .carvino-item-row > .item-qty { grid-area: qty; }
+  .carvino-item-row > .item-total { grid-area: total; justify-self: start; font-size: 16px; }
+  .carvino-item-row > .remove-btn { grid-area: remove; justify-self: end; }
 }
 
 /* ---------- Mobile breakpoint (≤ 768px) ---------- */
-@media (max-width: 400px) {
+@media (max-width: 768px) {
 
   /* ---- Top Bar ---- */
   .navbar {
@@ -3440,3 +3469,4 @@ body.no-sidebar .page-header {
     font-size: 19px;
   }
 }
+

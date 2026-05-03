@@ -1,7 +1,17 @@
 // ===================== BILLING MODULE =====================
-// Product format: Category | Item Name | Unit Price | Qty | Subtotal
+// ICC format: Category | Item Name | Unit Price | Qty | Subtotal
+// Carvino format: Cutting Type | Material | Size | Sqft | Rate/Sqft | Qty | Subtotal
 
 let itemCounter = 0;
+
+function isCarvinoBilling() {
+  var settings = Storage.getSettings();
+  return settings.activeCompanyId === 'company2' || settings.colorTone === 'carvino';
+}
+
+function money(amount) {
+  return 'Rs.' + Number(amount || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 });
+}
 
 // ---- Build category options ----
 function buildCategoryOptions(selectedCat) {
@@ -11,18 +21,46 @@ function buildCategoryOptions(selectedCat) {
   ).join('');
 }
 
-// ---- Build item options for a category ----
+// ---- Build item/material options for a category ----
 function buildItemOptions(category, selectedItem) {
   const items = Storage.getCatalogItems(category);
-  if (!items.length) return '<option value="">— No items —</option>';
+  if (!items.length) return '<option value="">- No items -</option>';
   return items.map(function(it) {
     return '<option value="' + it.name + '" data-price="' + it.price + '"' +
       (selectedItem === it.name ? ' selected' : '') + '>' + it.name + '</option>';
   }).join('');
 }
 
+function updateBillingModeUI() {
+  var carvino = isCarvinoBilling();
+  var header = document.querySelector('.item-header');
+  var subtitle = document.querySelector('.items-box .section-label + div');
+  var help = document.querySelector('.card [style*="text-align:center"]');
+
+  if (header) {
+    header.classList.toggle('carvino-item-header', carvino);
+    header.innerHTML = carvino
+      ? '<span>Item</span><span>Material</span><span>Unit</span><span>Height</span><span>Width</span><span>Sqft</span><span>Rate/Sqft</span><span>Qty</span><span>Total</span><span></span>'
+      : '<span>Category</span><span>Item Name</span><span>Unit Price</span><span>Qty</span><span>Subtotal</span><span></span>';
+  }
+  if (subtitle) {
+    subtitle.innerHTML = carvino
+      ? '<span id="itemCount">0</span> items - Height x Width to Sqft x Rate x Qty'
+      : '<span id="itemCount">0</span> items - Unit Price x Qty = Subtotal';
+  }
+  if (help) {
+    help.innerHTML = carvino
+      ? 'Auto sets sqft to 1 for fixed-rate work<br>Discount applied on final total'
+      : 'Unit Price x Qty = Subtotal<br>Discount applied on final total';
+  }
+}
+
 // ---- Add Item Row ----
 function addItem(prefill) {
+  return isCarvinoBilling() ? addCarvinoItem(prefill) : addStandardItem(prefill);
+}
+
+function addStandardItem(prefill) {
   prefill = prefill || {};
   itemCounter++;
   var id = 'item-' + itemCounter;
@@ -47,15 +85,14 @@ function addItem(prefill) {
       buildItemOptions(defCat, defItem) +
     '</select>' +
     '<input type="number" class="item-price" placeholder="Price" min="0" step="1"' +
-      ' value="' + defPrice + '" oninput="calculateTotal()" title="Unit Price (₹)">' +
+      ' value="' + defPrice + '" oninput="calculateTotal()" title="Unit Price">' +
     '<input type="number" class="item-qty" placeholder="Qty" min="1" step="1"' +
       ' value="' + defQty + '" oninput="calculateTotal()" title="Quantity">' +
-    '<span class="item-total">₹0</span>' +
-    '<button class="remove-btn" onclick="removeItem(\'' + id + '\')" title="Remove">✕</button>';
+    '<span class="item-total">Rs.0</span>' +
+    '<button class="remove-btn" onclick="removeItem(\'' + id + '\')" title="Remove">x</button>';
 
   document.getElementById('billItems').appendChild(div);
 
-  // Auto-fill price from catalog
   if (defPrice === '' && defCat) {
     var firstItem  = defItem || (catalog[defCat] && catalog[defCat][0] ? catalog[defCat][0].name : '');
     var firstPrice = Storage.getItemPrice(defCat, firstItem);
@@ -66,33 +103,103 @@ function addItem(prefill) {
   calculateTotal();
 }
 
+function addCarvinoItem(prefill) {
+  prefill = prefill || {};
+  itemCounter++;
+  var id = 'item-' + itemCounter;
+
+  var catalog = Storage.getCatalog();
+  var categories = Object.keys(catalog);
+  var defCat = prefill.category || categories[0] || 'CNC Cutting';
+  var defItem = prefill.itemName || prefill.material || '';
+  var defUnit = prefill.sizeUnit || 'inch';
+  var autoSqft = prefill.autoSqft === true;
+
+  var div = document.createElement('div');
+  div.className = 'item-row carvino-item-row fade-in';
+  div.id = id;
+  div.dataset.itemId = itemCounter;
+
+  div.innerHTML =
+    '<select class="item-cat" onchange="onCategoryChange(this,\'' + id + '\')">' +
+      buildCategoryOptions(defCat) +
+    '</select>' +
+    '<select class="item-name" onchange="onItemChange(this,\'' + id + '\')">' +
+      buildItemOptions(defCat, defItem) +
+    '</select>' +
+    '<select class="size-unit" onchange="calculateTotal()">' +
+      '<option value="inch"' + (defUnit === 'inch' ? ' selected' : '') + '>Inch</option>' +
+      '<option value="mm"' + (defUnit === 'mm' ? ' selected' : '') + '>MM</option>' +
+    '</select>' +
+    '<input type="number" class="item-height" placeholder="Height" min="0" step="0.01" value="' + (prefill.height || '') + '" oninput="calculateTotal()">' +
+    '<input type="number" class="item-width" placeholder="Width" min="0" step="0.01" value="' + (prefill.width || '') + '" oninput="calculateTotal()">' +
+    '<div class="sqft-box">' +
+      '<label class="auto-sqft"><input type="checkbox" class="auto-sqft-input" onchange="onAutoSqftChange(this,\'' + id + '\')"' + (autoSqft ? ' checked' : '') + '> Auto</label>' +
+      '<input type="number" class="item-sqft" placeholder="Sqft" min="0" step="0.01" value="' + (prefill.sqft || '') + '" oninput="calculateTotal()">' +
+    '</div>' +
+    '<input type="number" class="item-price" placeholder="Rate" min="0" step="0.01" value="' + (prefill.unitPrice || '') + '" oninput="calculateTotal()" title="Rate per sqft">' +
+    '<input type="number" class="item-qty" placeholder="Qty" min="1" step="1" value="' + (prefill.qty || 1) + '" oninput="calculateTotal()">' +
+    '<span class="item-total">Rs.0</span>' +
+    '<button class="remove-btn" onclick="removeItem(\'' + id + '\')" title="Remove">x</button>';
+
+  document.getElementById('billItems').appendChild(div);
+  if (!defItem && catalog[defCat] && catalog[defCat][0]) div.querySelector('.item-name').value = catalog[defCat][0].name;
+  applyAutoSqftState(div);
+  calculateTotal();
+}
+
 // ---- Category changed ----
 function onCategoryChange(catSelect, rowId) {
-  var row      = document.getElementById(rowId);
+  var row = document.getElementById(rowId);
   if (!row) return;
-  var itemSel  = row.querySelector('.item-name');
+  var itemSel = row.querySelector('.item-name');
   var priceInp = row.querySelector('.item-price');
 
   itemSel.innerHTML = buildItemOptions(catSelect.value, '');
 
-  var firstOpt = itemSel.querySelector('option[data-price]');
-  if (firstOpt) {
-    var price = parseFloat(firstOpt.dataset.price) || 0;
-    priceInp.value = price > 0 ? price : '';
-  } else {
-    priceInp.value = '';
+  if (!isCarvinoBilling()) {
+    var firstOpt = itemSel.querySelector('option[data-price]');
+    if (firstOpt) {
+      var price = parseFloat(firstOpt.dataset.price) || 0;
+      priceInp.value = price > 0 ? price : '';
+    } else {
+      priceInp.value = '';
+    }
   }
   calculateTotal();
 }
 
-// ---- Item changed → auto-fill price ----
+// ---- Item changed: auto-fill price for ICC only ----
 function onItemChange(itemSelect, rowId) {
-  var row      = document.getElementById(rowId);
-  if (!row) return;
+  var row = document.getElementById(rowId);
+  if (!row || isCarvinoBilling()) {
+    calculateTotal();
+    return;
+  }
   var selected = itemSelect.options[itemSelect.selectedIndex];
-  var price    = parseFloat(selected && selected.dataset ? selected.dataset.price : 0) || 0;
+  var price = parseFloat(selected && selected.dataset ? selected.dataset.price : 0) || 0;
   row.querySelector('.item-price').value = price > 0 ? price : '';
   calculateTotal();
+}
+
+function onAutoSqftChange(input, rowId) {
+  var row = document.getElementById(rowId);
+  if (!row) return;
+  applyAutoSqftState(row);
+  calculateTotal();
+}
+
+function applyAutoSqftState(row) {
+  var auto = row.querySelector('.auto-sqft-input') && row.querySelector('.auto-sqft-input').checked;
+  ['.item-height', '.item-width', '.size-unit'].forEach(function(selector) {
+    var el = row.querySelector(selector);
+    if (el) el.disabled = auto;
+  });
+  var sqft = row.querySelector('.item-sqft');
+  if (sqft) {
+    sqft.readOnly = !auto;
+    if (auto) sqft.value = '1';
+  }
 }
 
 // ---- Remove Row ----
@@ -103,40 +210,66 @@ function removeItem(id) {
   setTimeout(function() { el.remove(); calculateTotal(); }, 200);
 }
 
-// ---- Calculation: Unit Price × Qty ----
+function getCarvinoSqft(row) {
+  var auto = row.querySelector('.auto-sqft-input') && row.querySelector('.auto-sqft-input').checked;
+  var sqftInput = row.querySelector('.item-sqft');
+  if (auto) {
+    if (sqftInput) sqftInput.value = '1';
+    return 1;
+  }
+
+  var height = parseFloat(row.querySelector('.item-height') && row.querySelector('.item-height').value) || 0;
+  var width = parseFloat(row.querySelector('.item-width') && row.querySelector('.item-width').value) || 0;
+  var unit = row.querySelector('.size-unit') && row.querySelector('.size-unit').value || 'inch';
+  var sqft = unit === 'mm' ? (height * width / 92903.04) : (height * width / 144);
+  sqft = +sqft.toFixed(3);
+  if (sqftInput) sqftInput.value = sqft > 0 ? sqft : '';
+  return sqft;
+}
+
+// ---- Calculation ----
 function calculateTotal() {
-  var rows     = document.querySelectorAll('.item-row');
+  var rows = document.querySelectorAll('.item-row');
   var settings = Storage.getSettings();
-  var taxRate  = parseFloat(settings.taxRate) || 0;
+  var taxRate = parseFloat(settings.taxRate) || 0;
   var subTotal = 0;
+  var carvino = isCarvinoBilling();
 
   rows.forEach(function(row) {
-    var price    = parseFloat(row.querySelector('.item-price') && row.querySelector('.item-price').value) || 0;
-    var qty      = parseFloat(row.querySelector('.item-qty')   && row.querySelector('.item-qty').value)   || 0;
-    var rowTotal = price * qty;
+    var price = parseFloat(row.querySelector('.item-price') && row.querySelector('.item-price').value) || 0;
+    var qty = parseFloat(row.querySelector('.item-qty') && row.querySelector('.item-qty').value) || 0;
+    var rowTotal;
+
+    if (carvino) {
+      var sqft = getCarvinoSqft(row);
+      rowTotal = sqft * price * qty;
+    } else {
+      rowTotal = price * qty;
+    }
+
     var totalSpan = row.querySelector('.item-total');
     if (totalSpan) {
-      totalSpan.textContent = '₹' + rowTotal.toLocaleString('en-IN', { maximumFractionDigits: 2 });
+      totalSpan.textContent = money(rowTotal);
       totalSpan.style.color = rowTotal > 0 ? 'var(--accent-3)' : 'var(--text-muted)';
     }
     subTotal += rowTotal;
   });
 
-  var discount   = parseFloat(document.getElementById('billDiscount') && document.getElementById('billDiscount').value) || 0;
-  var taxAmt     = subTotal * (taxRate / 100);
+  var discount = parseFloat(document.getElementById('billDiscount') && document.getElementById('billDiscount').value) || 0;
+  var taxAmt = subTotal * (taxRate / 100);
   var finalTotal = subTotal + taxAmt - discount;
   if (finalTotal < 0) finalTotal = 0;
 
-  var elSub   = document.getElementById('subTotal');
-  var elTax   = document.getElementById('taxAmount');
-  var elDisc  = document.getElementById('discountDisplay');
+  var elSub = document.getElementById('subTotal');
+  var elTax = document.getElementById('taxAmount');
+  var elDisc = document.getElementById('discountDisplay');
   var elTotal = document.getElementById('grandTotal');
   var elCount = document.getElementById('itemCount');
 
-  if (elSub)   elSub.textContent   = '₹' + subTotal.toLocaleString('en-IN',   { maximumFractionDigits: 2 });
-  if (elTax)   elTax.textContent   = '₹' + taxAmt.toLocaleString('en-IN',     { maximumFractionDigits: 2 });
-  if (elDisc)  elDisc.textContent  = '₹' + discount.toLocaleString('en-IN',   { maximumFractionDigits: 2 });
-  if (elTotal) elTotal.textContent = '₹' + finalTotal.toLocaleString('en-IN', { maximumFractionDigits: 2 });
+  if (elSub) elSub.textContent = money(subTotal);
+  if (elTax) elTax.textContent = money(taxAmt);
+  if (elDisc) elDisc.textContent = money(discount);
+  if (elTotal) elTotal.textContent = money(finalTotal);
   if (elCount) elCount.textContent = rows.length;
 
   return { subTotal, taxAmt, discount, finalTotal, rows: rows.length };
@@ -145,59 +278,92 @@ function calculateTotal() {
 // ---- Save Bill ----
 function saveBill() {
   var customerId = document.getElementById('billCustomer') && document.getElementById('billCustomer').value;
-  var note       = (document.getElementById('billNote') && document.getElementById('billNote').value || '').trim();
-  var status     = document.getElementById('billStatus') && document.getElementById('billStatus').value || 'paid';
-  var payMethod  = document.getElementById('billPayMethod') && document.getElementById('billPayMethod').value || 'Cash';
-  var discount   = parseFloat(document.getElementById('billDiscount') && document.getElementById('billDiscount').value) || 0;
-  var rows       = document.querySelectorAll('.item-row');
+  var note = (document.getElementById('billNote') && document.getElementById('billNote').value || '').trim();
+  var status = document.getElementById('billStatus') && document.getElementById('billStatus').value || 'paid';
+  var payMethod = document.getElementById('billPayMethod') && document.getElementById('billPayMethod').value || 'Cash';
+  var customerGST = (document.getElementById('billCustomerGST') && document.getElementById('billCustomerGST').value || '').trim();
+  var discount = parseFloat(document.getElementById('billDiscount') && document.getElementById('billDiscount').value) || 0;
+  var rows = document.querySelectorAll('.item-row');
+  var carvino = isCarvinoBilling();
 
   if (!customerId) { showToast('Please select a customer', 'warning'); return; }
   if (rows.length === 0) { showToast('Please add at least one item', 'warning'); return; }
 
   var hasInvalid = false;
-  rows.forEach(function(row) {
-    var price = parseFloat(row.querySelector('.item-price').value) || 0;
-    var qty   = parseFloat(row.querySelector('.item-qty').value)   || 0;
-    if (price === 0 || qty === 0) hasInvalid = true;
+  var settings = Storage.getSettings();
+  var taxRate = parseFloat(settings.taxRate) || 0;
+  var items = [];
+  var subTotal = 0;
+
+  rows.forEach(function(row, index) {
+    var category = row.querySelector('.item-cat') && row.querySelector('.item-cat').value || '';
+    var itemName = row.querySelector('.item-name') && row.querySelector('.item-name').value || '';
+    var unitPrice = parseFloat(row.querySelector('.item-price') && row.querySelector('.item-price').value) || 0;
+    var qty = parseFloat(row.querySelector('.item-qty') && row.querySelector('.item-qty').value) || 1;
+    var rowTotal;
+
+    if (carvino) {
+      var auto = row.querySelector('.auto-sqft-input') && row.querySelector('.auto-sqft-input').checked;
+      var height = parseFloat(row.querySelector('.item-height') && row.querySelector('.item-height').value) || 0;
+      var width = parseFloat(row.querySelector('.item-width') && row.querySelector('.item-width').value) || 0;
+      var sizeUnit = row.querySelector('.size-unit') && row.querySelector('.size-unit').value || 'inch';
+      var sqft = getCarvinoSqft(row);
+      rowTotal = sqft * unitPrice * qty;
+      if (!category || !itemName || unitPrice <= 0 || qty <= 0 || (!auto && (height <= 0 || width <= 0 || sqft <= 0))) hasInvalid = true;
+      items.push({
+        siNo: index + 1,
+        category,
+        itemName,
+        description: category,
+        material: itemName,
+        sizeUnit,
+        height,
+        width,
+        sqft,
+        autoSqft: auto,
+        unitPrice,
+        ratePerSqft: unitPrice,
+        qty,
+        quantity: qty,
+        subtotal: +rowTotal.toFixed(2),
+        totalPrice: +rowTotal.toFixed(2)
+      });
+    } else {
+      rowTotal = unitPrice * qty;
+      if (unitPrice <= 0 || qty <= 0) hasInvalid = true;
+      items.push({ category, itemName, unitPrice, qty, subtotal: +rowTotal.toFixed(2) });
+    }
+    subTotal += rowTotal;
   });
-  if (hasInvalid) { showToast('Please fill Unit Price & Qty for all items', 'warning'); return; }
 
-  var settings    = Storage.getSettings();
-  var taxRate     = parseFloat(settings.taxRate) || 0;
-  var items       = [];
-  var subTotal    = 0;
+  if (hasInvalid) {
+    showToast(carvino ? 'Fill material, size/rate and quantity for all rows' : 'Please fill Unit Price & Qty for all items', 'warning');
+    return;
+  }
 
-  rows.forEach(function(row) {
-    var category  = row.querySelector('.item-cat')  && row.querySelector('.item-cat').value  || '';
-    var itemName  = row.querySelector('.item-name') && row.querySelector('.item-name').value || '';
-    var unitPrice = parseFloat(row.querySelector('.item-price').value) || 0;
-    var qty       = parseFloat(row.querySelector('.item-qty').value)   || 1;
-    var rowTotal  = unitPrice * qty;
-    subTotal     += rowTotal;
-    items.push({ category, itemName, unitPrice, qty, subtotal: +rowTotal.toFixed(2) });
-  });
-
-  var taxAmt      = subTotal * taxRate / 100;
+  var taxAmt = subTotal * taxRate / 100;
   var totalAmount = +(subTotal + taxAmt - discount).toFixed(2);
   if (totalAmount < 0) totalAmount = 0;
 
   var customer = Storage.getCustomerById(customerId);
   var bill = Storage.addBill({
+    billingMode: carvino ? 'carvino' : 'standard',
     customerId,
-    customerName:  customer && customer.name  || 'Unknown',
+    customerName: customer && customer.name || 'Unknown',
     customerPhone: customer && customer.phone || '',
+    customerGST: customerGST || (customer && customer.gstin) || '',
     items,
-    subTotal:      +subTotal.toFixed(2),
+    subTotal: +subTotal.toFixed(2),
     taxRate,
-    taxAmount:     +taxAmt.toFixed(2),
-    discount:      +discount.toFixed(2),
+    taxAmount: +taxAmt.toFixed(2),
+    discount: +discount.toFixed(2),
     paymentMethod: payMethod,
     totalAmount,
     note,
     status
   });
 
-  showToast('Bill ' + bill.billNo + ' saved! ₹' + totalAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 }), 'success');
+  showToast('Bill ' + bill.billNo + ' saved! ' + money(totalAmount), 'success');
 
   setTimeout(function() {
     if (window.confirm('Bill ' + bill.billNo + ' saved!\n\nPrint / preview now?')) {
@@ -211,12 +377,14 @@ function saveBill() {
 // ---- Reset ----
 function resetBillForm() {
   document.getElementById('billItems').innerHTML = '';
-  document.getElementById('billCustomer').value  = '';
-  document.getElementById('billNote').value      = '';
-  document.getElementById('billStatus').value    = 'paid';
-  if (document.getElementById('billDiscount'))  document.getElementById('billDiscount').value  = '';
+  document.getElementById('billCustomer').value = '';
+  document.getElementById('billNote').value = '';
+  if (document.getElementById('billCustomerGST')) document.getElementById('billCustomerGST').value = '';
+  document.getElementById('billStatus').value = 'paid';
+  if (document.getElementById('billDiscount')) document.getElementById('billDiscount').value = '';
   if (document.getElementById('billPayMethod')) document.getElementById('billPayMethod').value = 'Cash';
   itemCounter = 0;
+  updateBillingModeUI();
   calculateTotal();
   addItem();
 }
@@ -232,9 +400,7 @@ function returnToHomeAfterInvoice() {
 }
 
 function printBill(billId) {
-  var bill = window.Storage && typeof Storage.getBillById === 'function'
-    ? Storage.getBillById(billId)
-    : null;
+  var bill = window.Storage && typeof Storage.getBillById === 'function' ? Storage.getBillById(billId) : null;
 
   if (bill && bill.invoicePdfUrl) {
     window.open(bill.invoicePdfUrl, '_blank');
@@ -242,7 +408,6 @@ function printBill(billId) {
     return;
   }
 
-  // Delegate to the cloud invoice generator (invoice-cloud.js)
   if (typeof generateCloudInvoice === 'function') {
     generateCloudInvoice(billId);
   } else if (typeof generateXLSXInvoice === 'function') {
@@ -252,70 +417,10 @@ function printBill(billId) {
   }
 }
 
-// ---- Generate Test Invoice (for testing) ----
-function generateTestInvoice() {
-  // Build a sample bill with dummy data
-  var testBill = {
-    id: 'TEST-' + Date.now(),
-    billNo: 'TEST-' + String(Math.floor(Math.random() * 9000) + 1000),
-    customerName: 'Test Customer',
-    customerPhone: '9876543210',
-    note: 'Test invoice — generated for testing purposes',
-    status: 'paid',
-    paymentMethod: 'Cash',
-    billDate: new Date().toISOString(),
-    createdAt: new Date().toISOString(),
-    items: [
-      { category: 'Products', itemName: 'Sample Item 1', unitPrice: 500, qty: 2, subtotal: 1000 },
-      { category: 'Products', itemName: 'Sample Item 2', unitPrice: 250, qty: 3, subtotal: 750 },
-      { category: 'Products', itemName: 'Sample Item 3', unitPrice: 1200, qty: 1, subtotal: 1200 }
-    ],
-    subTotal: 2950,
-    taxRate: 0,
-    taxAmount: 0,
-    discount: 150,
-    totalAmount: 2800
-  };
-
-  // Temporarily store the test bill so the invoice generator can find it
-  try {
-    var bills = Storage.getBills();
-    bills.push(testBill);
-    Storage.saveBills(bills);
-    console.log('Test bill stored:', testBill.id);
-  } catch (e) {
-    console.error('Error storing test bill:', e);
-    showToast('Failed to create test bill', 'error');
-    return;
-  }
-
-  showToast('Generating test invoice via cloud...', 'success');
-
-  // Trigger the cloud invoice generator
-  if (typeof generateCloudInvoice === 'function') {
-    generateCloudInvoice(testBill.id);
-  } else if (typeof generateXLSXInvoice === 'function') {
-    generateXLSXInvoice(testBill.id);
-  } else {
-    showToast('Invoice generator not loaded', 'error');
-  }
-
-  // Clean up: remove the test bill from storage after a delay
-  setTimeout(function() {
-    try {
-      var storedBills = Storage.getBills();
-      storedBills = storedBills.filter(function(b) { return b.id !== testBill.id; });
-      Storage.saveBills(storedBills);
-      console.log('Test bill cleaned up');
-    } catch (e) {
-      console.error('Error cleaning up test bill:', e);
-    }
-  }, 10000); // 10 seconds to allow cloud generation to complete
-}
-
-
 // ---- Init ----
 document.addEventListener('DOMContentLoaded', function() {
+  window._billingCompanyId = Storage.getActiveCompanyId();
+  updateBillingModeUI();
   populateCustomerSelect('billCustomer');
   addItem();
   calculateTotal();

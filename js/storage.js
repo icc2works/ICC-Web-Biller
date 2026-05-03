@@ -13,6 +13,7 @@ const KEYS = {
 };
 
 const SYNC_KEYS = [KEYS.CUSTOMERS, KEYS.BILLS, KEYS.SETTINGS, KEYS.BILL_SEQ, KEYS.INVOICE_TEMPLATE, KEYS.ADMIN_PASSWORD];
+const DEFAULT_COMPANY_ID = 'icc';
 
 // ===================== DEFAULT ITEM CATALOG =====================
 const DEFAULT_CATALOG = {
@@ -64,9 +65,116 @@ const DEFAULT_CATALOG = {
   ]
 };
 
+const DEFAULT_INVOICE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbywJJGgEbpwMxQjPAHRh2cCmI-UpFZAZZpg6kYs4WGD_UHaYwdBADr162gVdLvXPW7RFg/exec';
+const OLD_CARVINO_INVOICE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwyindIJu6i6kYiUpUW1uXoechVjWmDxpqpZqaM6vKHEo6Kl34lk1K5AHBPj95fvk7ktg/exec';
+const CARVINO_INVOICE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyYQ-Wps0lYkeocemJ9dVRneRLpWR-rpYbMyYqAJaa6_aJZJvgKM1voETrSFejrgw43rA/exec';
+const CARVINO_CATALOG = {
+  "CNC Cutting": [
+    { name: "WPC", price: 0 },
+    { name: "ACP", price: 0 },
+    { name: "Plywood", price: 0 },
+    { name: "Korean sheet", price: 0 },
+    { name: "Milk White Sheet", price: 0 }
+  ],
+  "Laser Cutting": [
+    { name: "MS", price: 0 },
+    { name: "Sheet", price: 0 }
+  ]
+};
+
+const DEFAULT_COMPANY_PROFILE = {
+  id: DEFAULT_COMPANY_ID,
+  label: 'ICC',
+  companyName: 'Indian CNC Carving',
+  companyAddress: '45, French Teacher St,\nKaraikal, Puducherry 609602',
+  companyPhone: '8870415956',
+  companyPhone2: '9786876576',
+  website: 'https://indiancnccarving.com/',
+  companyGST: '',
+  billPrefix: 'ICC',
+  colorTone: 'icc',
+  invoiceScriptUrl: DEFAULT_INVOICE_SCRIPT_URL,
+  itemCatalog: DEFAULT_CATALOG
+};
+
+const SECOND_COMPANY_PROFILE = {
+  id: 'company2',
+  label: 'Carvino',
+  companyName: 'Carvino',
+  companyAddress: '',
+  companyPhone: '',
+  companyPhone2: '',
+  website: '',
+  companyGST: '',
+  billPrefix: 'CNO',
+  colorTone: 'carvino',
+  invoiceScriptUrl: CARVINO_INVOICE_SCRIPT_URL,
+  itemCatalog: CARVINO_CATALOG
+};
+
 // ===================== IN-MEMORY CACHE =====================
 // All reads go through this cache. Writes update both the cache and CloudDB.
 const _cache = {};
+
+function cloneCatalog(catalog) {
+  return JSON.parse(JSON.stringify(catalog || DEFAULT_CATALOG));
+}
+
+function normalizeCarvinoCatalog(existingCatalog) {
+  const existing = existingCatalog || {};
+  const catalog = cloneCatalog(CARVINO_CATALOG);
+  Object.keys(catalog).forEach(function(category) {
+    catalog[category] = catalog[category].map(function(item) {
+      var saved = existing[category] && existing[category].find(function(oldItem) {
+        return oldItem && oldItem.name === item.name;
+      });
+      return saved ? { ...item, price: Number(saved.price || 0) } : item;
+    });
+  });
+  return catalog;
+}
+
+function normalizeCompanyProfile(profile, index) {
+  const base = index === 0 ? DEFAULT_COMPANY_PROFILE : SECOND_COMPANY_PROFILE;
+  const normalized = {
+    ...base,
+    ...profile,
+    id: profile.id || base.id || 'company' + (index + 1),
+    label: profile.label || base.label,
+    itemCatalog: cloneCatalog(profile.itemCatalog || base.itemCatalog || DEFAULT_CATALOG)
+  };
+
+  if (normalized.id === DEFAULT_COMPANY_ID && (!normalized.label || normalized.label === 'Company 1')) {
+    normalized.label = 'ICC';
+  }
+  if (normalized.id === 'company2') {
+    if (!normalized.label || normalized.label === 'Company 2') normalized.label = 'Carvino';
+    if (!normalized.companyName || normalized.companyName === 'Second Company') normalized.companyName = 'Carvino';
+    if (!normalized.billPrefix || normalized.billPrefix === 'C2' || normalized.billPrefix === 'CAR') normalized.billPrefix = 'CNO';
+    if (!normalized.invoiceScriptUrl || normalized.invoiceScriptUrl === OLD_CARVINO_INVOICE_SCRIPT_URL) {
+      normalized.invoiceScriptUrl = CARVINO_INVOICE_SCRIPT_URL;
+    }
+    normalized.itemCatalog = normalizeCarvinoCatalog(profile.itemCatalog);
+    normalized.colorTone = 'carvino';
+  }
+  if (normalized.id === DEFAULT_COMPANY_ID) normalized.colorTone = 'icc';
+
+  return normalized;
+}
+
+function getRememberedActiveCompanyId() {
+  try {
+    return window.localStorage && window.localStorage.getItem('cnc_active_company_id');
+  } catch (e) {
+    return null;
+  }
+}
+
+function rememberActiveCompanyId(companyId) {
+  try {
+    if (window.localStorage && companyId) window.localStorage.setItem('cnc_active_company_id', companyId);
+  } catch (e) {}
+}
 
 const Storage = {
   cloudReady: false,
@@ -81,9 +189,7 @@ const Storage = {
 
   set(key, value) {
     try {
-      // Update in-memory cache
       _cache[key] = value;
-      // Persist to cloud
       this._saveToCloud(key, value);
       return true;
     } catch (e) {
@@ -94,9 +200,7 @@ const Storage = {
 
   remove(key) {
     delete _cache[key];
-    if (window.CloudDB) {
-      window.CloudDB.removeData(key);
-    }
+    if (window.CloudDB) window.CloudDB.removeData(key);
   },
 
   _saveToCloud(key, value) {
@@ -104,7 +208,6 @@ const Storage = {
     if (window.CloudDB) window.CloudDB.setData(key, value);
   },
 
-  // Build a payload from the in-memory cache for cloud operations
   getLocalCloudPayload() {
     return SYNC_KEYS.reduce((out, key) => {
       const value = this.get(key, null);
@@ -124,9 +227,15 @@ const Storage = {
     const merged = { ...(cloudData || {}), ...(localData || {}) };
     merged[KEYS.CUSTOMERS] = this.mergeListsById(localData[KEYS.CUSTOMERS], cloudData && cloudData[KEYS.CUSTOMERS]);
     merged[KEYS.BILLS] = this.mergeListsById(localData[KEYS.BILLS], cloudData && cloudData[KEYS.BILLS]);
+    const cloudSettings = (cloudData && cloudData[KEYS.SETTINGS]) || {};
+    const localSettings = (localData && localData[KEYS.SETTINGS]) || {};
     merged[KEYS.SETTINGS] = {
-      ...((cloudData && cloudData[KEYS.SETTINGS]) || {}),
-      ...((localData && localData[KEYS.SETTINGS]) || {})
+      ...cloudSettings,
+      ...localSettings,
+      companySequences: {
+        ...(cloudSettings.companySequences || {}),
+        ...(localSettings.companySequences || {})
+      }
     };
     merged[KEYS.BILL_SEQ] = Math.max(
       Number(localData[KEYS.BILL_SEQ] || 0),
@@ -138,13 +247,10 @@ const Storage = {
     return merged;
   },
 
-  // Apply data from the cloud into the in-memory cache
   applyCloudPayload(data) {
     try {
       SYNC_KEYS.forEach(key => {
-        if (data && data[key] !== undefined && data[key] !== null) {
-          _cache[key] = data[key];
-        }
+        if (data && data[key] !== undefined && data[key] !== null) _cache[key] = data[key];
       });
     } catch (e) {
       console.error('Error applying cloud payload:', e);
@@ -156,13 +262,9 @@ const Storage = {
     const connected = await window.CloudDB.init();
     if (!connected) return false;
 
-    // Load data from cloud into cache
     const cloudData = await window.CloudDB.getAll();
-    if (cloudData) {
-      this.applyCloudPayload(cloudData);
-    }
+    if (cloudData) this.applyCloudPayload(cloudData);
 
-    // Subscribe to realtime updates
     window.CloudDB.subscribe(data => {
       this.applyCloudPayload(data || {});
       window.dispatchEvent(new CustomEvent('storage-cloud-ready', { detail: window.CloudDB.status() }));
@@ -173,108 +275,234 @@ const Storage = {
     return true;
   },
 
+  // ---- COMPANY PROFILES ----
+  getRawSettings() {
+    const saved = this.get(KEYS.SETTINGS, null) || {};
+    const legacyProfile = {
+      ...DEFAULT_COMPANY_PROFILE,
+      companyName: saved.companyName || DEFAULT_COMPANY_PROFILE.companyName,
+      companyAddress: saved.companyAddress || DEFAULT_COMPANY_PROFILE.companyAddress,
+      companyPhone: saved.companyPhone || DEFAULT_COMPANY_PROFILE.companyPhone,
+      companyPhone2: saved.companyPhone2 || DEFAULT_COMPANY_PROFILE.companyPhone2,
+      website: saved.website || DEFAULT_COMPANY_PROFILE.website,
+      companyGST: saved.companyGST || '',
+      billPrefix: saved.billPrefix || DEFAULT_COMPANY_PROFILE.billPrefix,
+      invoiceScriptUrl: saved.invoiceScriptUrl || DEFAULT_INVOICE_SCRIPT_URL,
+      itemCatalog: cloneCatalog(saved.itemCatalog || DEFAULT_CATALOG)
+    };
+    const sourceProfiles = Array.isArray(saved.companyProfiles) && saved.companyProfiles.length
+      ? saved.companyProfiles
+      : [legacyProfile, SECOND_COMPANY_PROFILE];
+    const companyProfiles = sourceProfiles.map((profile, index) => normalizeCompanyProfile(profile || {}, index));
+
+    if (!companyProfiles.find(p => p.id === DEFAULT_COMPANY_ID)) companyProfiles.unshift(legacyProfile);
+    if (companyProfiles.length < 2) companyProfiles.push({ ...SECOND_COMPANY_PROFILE, itemCatalog: cloneCatalog(DEFAULT_CATALOG) });
+
+    const rememberedActiveCompanyId = getRememberedActiveCompanyId();
+    const requestedActiveCompanyId = rememberedActiveCompanyId || saved.activeCompanyId;
+    const activeCompanyId = companyProfiles.find(p => p.id === requestedActiveCompanyId)
+      ? requestedActiveCompanyId
+      : companyProfiles[0].id;
+    const legacySeq = Number(this.get(KEYS.BILL_SEQ, 0)) || 0;
+
+    return {
+      theme: saved.theme || 'dark',
+      currency: saved.currency || 'Rs.',
+      defaultRate: saved.defaultRate || '',
+      taxRate: saved.taxRate || 0,
+      qrCode: saved.qrCode || '',
+      activeCompanyId,
+      companyProfiles,
+      companySequences: { [DEFAULT_COMPANY_ID]: legacySeq, ...(saved.companySequences || {}) }
+    };
+  },
+
+  saveRawSettings(settings) {
+    if (settings && settings.activeCompanyId) rememberActiveCompanyId(settings.activeCompanyId);
+    return this.set(KEYS.SETTINGS, settings);
+  },
+
+  getCompanyProfiles() {
+    return this.getRawSettings().companyProfiles;
+  },
+
+  getActiveCompanyId() {
+    return this.getRawSettings().activeCompanyId || DEFAULT_COMPANY_ID;
+  },
+
+  getActiveCompanyProfile() {
+    const raw = this.getRawSettings();
+    return raw.companyProfiles.find(p => p.id === raw.activeCompanyId) || raw.companyProfiles[0] || DEFAULT_COMPANY_PROFILE;
+  },
+
+  belongsToActiveCompany(record) {
+    return (record && (record.companyId || DEFAULT_COMPANY_ID)) === this.getActiveCompanyId();
+  },
+
+  setActiveCompanyId(companyId) {
+    const raw = this.getRawSettings();
+    if (!raw.companyProfiles.find(p => p.id === companyId)) return false;
+    rememberActiveCompanyId(companyId);
+    this.saveRawSettings({ ...raw, activeCompanyId: companyId });
+    window.dispatchEvent(new CustomEvent('active-company-changed', { detail: { companyId } }));
+    return true;
+  },
+
+  getBillSequence(companyId) {
+    const raw = this.getRawSettings();
+    return Number(raw.companySequences[companyId || raw.activeCompanyId] || 0);
+  },
+
+  setBillSequence(companyId, sequence) {
+    const raw = this.getRawSettings();
+    const targetId = companyId || raw.activeCompanyId;
+    const companySequences = { ...raw.companySequences, [targetId]: Number(sequence) || 0 };
+    if (targetId === DEFAULT_COMPANY_ID) this.set(KEYS.BILL_SEQ, Number(sequence) || 0);
+    return this.saveRawSettings({ ...raw, companySequences });
+  },
+
+  previewBillNumber(sequence) {
+    const now = new Date();
+    const activeId = this.getActiveCompanyId();
+    if (activeId === 'company2') {
+      const yy = String(now.getFullYear()).slice(-2);
+      const mm = String(now.getMonth() + 1).padStart(2, '0');
+      return 'CNO-' + yy + mm + '-' + String(sequence).padStart(3, '0');
+    }
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    const prefix = (this.getActiveCompanyProfile().billPrefix || 'INV').trim() || 'INV';
+    return prefix + '-' + mm + dd + '-' + String(sequence).padStart(3, '0');
+  },
+
   // ---- CUSTOMERS ----
-  getCustomers() {
+  getAllCustomers() {
     return this.get(KEYS.CUSTOMERS, []);
   },
 
+  getCustomers() {
+    return this.getAllCustomers().filter(c => this.belongsToActiveCompany(c));
+  },
+
+  saveAllCustomers(list) {
+    return this.set(KEYS.CUSTOMERS, Array.isArray(list) ? list : []);
+  },
+
   saveCustomers(list) {
-    return this.set(KEYS.CUSTOMERS, list);
+    const activeId = this.getActiveCompanyId();
+    const others = this.getAllCustomers().filter(c => (c.companyId || DEFAULT_COMPANY_ID) !== activeId);
+    const active = (Array.isArray(list) ? list : []).map(c => ({ ...c, companyId: c.companyId || activeId }));
+    return this.saveAllCustomers(others.concat(active));
   },
 
   addCustomer(customer) {
-    const list = this.getCustomers();
+    const list = this.getAllCustomers();
     customer.id = 'CUST-' + Date.now();
+    customer.companyId = this.getActiveCompanyId();
     customer.createdAt = new Date().toISOString();
     list.push(customer);
-    this.saveCustomers(list);
+    this.saveAllCustomers(list);
     return customer;
   },
 
   updateCustomer(id, data) {
-    const list = this.getCustomers();
+    const list = this.getAllCustomers();
     const idx = list.findIndex(c => c.id === id);
-    if (idx > -1) { list[idx] = { ...list[idx], ...data }; this.saveCustomers(list); }
+    if (idx > -1) { list[idx] = { ...list[idx], ...data }; this.saveAllCustomers(list); }
   },
 
   deleteCustomer(id) {
-    const list = this.getCustomers().filter(c => c.id !== id);
-    this.saveCustomers(list);
+    this.saveAllCustomers(this.getAllCustomers().filter(c => c.id !== id));
   },
 
   getCustomerById(id) {
-    return this.getCustomers().find(c => c.id === id) || null;
+    return this.getAllCustomers().find(c => c.id === id && this.belongsToActiveCompany(c)) || null;
   },
 
   // ---- BILLS ----
-  getBills() {
+  getAllBills() {
     return this.get(KEYS.BILLS, []);
   },
 
+  getBills() {
+    return this.getAllBills().filter(b => this.belongsToActiveCompany(b));
+  },
+
+  saveAllBills(list) {
+    return this.set(KEYS.BILLS, Array.isArray(list) ? list : []);
+  },
+
   saveBills(list) {
-    return this.set(KEYS.BILLS, list);
+    const activeId = this.getActiveCompanyId();
+    const others = this.getAllBills().filter(b => (b.companyId || DEFAULT_COMPANY_ID) !== activeId);
+    const active = (Array.isArray(list) ? list : []).map(b => ({ ...b, companyId: b.companyId || activeId }));
+    return this.saveAllBills(others.concat(active));
   },
 
   getNextBillNumber() {
-    const seq = this.get(KEYS.BILL_SEQ, 0) + 1;
-    this.set(KEYS.BILL_SEQ, seq);
-    const now = new Date();
-    const mm = String(now.getMonth() + 1).padStart(2, '0');
-    const dd = String(now.getDate()).padStart(2, '0');
-    return 'ICC-' + mm + dd + '-' + String(seq).padStart(3, '0');
+    const activeId = this.getActiveCompanyId();
+    const seq = this.getBillSequence(activeId) + 1;
+    this.setBillSequence(activeId, seq);
+    return this.previewBillNumber(seq);
   },
 
   addBill(bill) {
-    const list = this.getBills();
+    const list = this.getAllBills();
     bill.id = 'BILL-' + Date.now();
+    bill.companyId = this.getActiveCompanyId();
     bill.billNo = this.getNextBillNumber();
     bill.createdAt = new Date().toISOString();
     bill.status = bill.status || 'paid';
     list.unshift(bill);
-    this.saveBills(list);
+    this.saveAllBills(list);
     return bill;
   },
 
   updateBill(id, data) {
-    const list = this.getBills();
+    const list = this.getAllBills();
     const idx = list.findIndex(b => b.id === id);
-    if (idx > -1) { list[idx] = { ...list[idx], ...data }; this.saveBills(list); }
+    if (idx > -1) { list[idx] = { ...list[idx], ...data }; this.saveAllBills(list); }
   },
 
   deleteBill(id) {
-    const list = this.getBills().filter(b => b.id !== id);
-    this.saveBills(list);
+    this.saveAllBills(this.getAllBills().filter(b => b.id !== id));
   },
 
   getBillById(id) {
-    return this.getBills().find(b => b.id === id) || null;
+    return this.getAllBills().find(b => b.id === id && this.belongsToActiveCompany(b)) || null;
   },
 
-  // ---- SETTINGS (with catalog) ----
+  // ---- SETTINGS (active company + global appearance) ----
   getSettings() {
-    const saved = this.get(KEYS.SETTINGS, null);
-    const defaults = {
-      companyName: 'Indian CNC Carving',
-      companyAddress: '45, French Teacher St,\nKaraikal, Puducherry 609602',
-      companyPhone: '8870415956',
-      companyPhone2: '9786876576',
-      website: 'https://indiancnccarving.com/',
-      companyGST: '',
-      theme: 'dark',
-      currency: '₹',
-      defaultRate: '',
-      taxRate: 0,
-      qrCode: '',
-      itemCatalog: DEFAULT_CATALOG
-    };
-    if (!saved) return defaults;
-    // Merge — always ensure itemCatalog exists
-    if (!saved.itemCatalog) saved.itemCatalog = DEFAULT_CATALOG;
-    return { ...defaults, ...saved };
+    const raw = this.getRawSettings();
+    const profile = this.getActiveCompanyProfile();
+    return { ...raw, ...profile, itemCatalog: cloneCatalog(profile.itemCatalog || DEFAULT_CATALOG) };
   },
 
   saveSettings(settings) {
-    return this.set(KEYS.SETTINGS, settings);
+    const raw = this.getRawSettings();
+    const activeId = settings.activeCompanyId || raw.activeCompanyId;
+    const companyFields = [
+      'label', 'companyName', 'companyAddress', 'companyPhone', 'companyPhone2',
+      'website', 'companyGST', 'billPrefix', 'colorTone', 'invoiceScriptUrl', 'itemCatalog'
+    ];
+    const profilePatch = {};
+    companyFields.forEach(key => {
+      if (settings[key] !== undefined) profilePatch[key] = settings[key];
+    });
+    const companyProfiles = raw.companyProfiles.map(profile =>
+      profile.id === activeId ? { ...profile, ...profilePatch, id: profile.id } : profile
+    );
+    return this.saveRawSettings({
+      ...raw,
+      theme: settings.theme !== undefined ? settings.theme : raw.theme,
+      currency: settings.currency !== undefined ? settings.currency : raw.currency,
+      defaultRate: settings.defaultRate !== undefined ? settings.defaultRate : raw.defaultRate,
+      taxRate: settings.taxRate !== undefined ? settings.taxRate : raw.taxRate,
+      qrCode: settings.qrCode !== undefined ? settings.qrCode : raw.qrCode,
+      activeCompanyId: activeId,
+      companyProfiles
+    });
   },
 
   // ---- CATALOG HELPERS ----
@@ -292,8 +520,7 @@ const Storage = {
   },
 
   getItemPrice(category, itemName) {
-    const items = this.getCatalogItems(category);
-    const found = items.find(i => i.name === itemName);
+    const found = this.getCatalogItems(category).find(i => i.name === itemName);
     return found ? found.price : 0;
   },
 
@@ -306,10 +533,7 @@ const Storage = {
   addCatalogItem(category, name, price) {
     const catalog = this.getCatalog();
     if (!catalog[category]) catalog[category] = [];
-    // Avoid duplicate names
-    if (!catalog[category].find(i => i.name === name)) {
-      catalog[category].push({ name, price: parseFloat(price) || 0 });
-    }
+    if (!catalog[category].find(i => i.name === name)) catalog[category].push({ name, price: parseFloat(price) || 0 });
     return this.saveCatalog(catalog);
   },
 
@@ -352,7 +576,6 @@ const Storage = {
     const today = new Date().toDateString();
     const bills_today = bills.filter(b => new Date(b.createdAt).toDateString() === today);
     const this_month = new Date();
-
     const todaySales = bills_today.reduce((s, b) => s + (b.totalAmount || 0), 0);
     const pendingAmt = bills.filter(b => b.status === 'pending').reduce((s, b) => s + (b.totalAmount || 0), 0);
     const monthSales = bills
@@ -361,25 +584,23 @@ const Storage = {
         return d.getMonth() === this_month.getMonth() && d.getFullYear() === this_month.getFullYear();
       })
       .reduce((s, b) => s + (b.totalAmount || 0), 0);
-    const totalBills = bills.length;
-
-    return { todaySales, pendingAmt, monthSales, totalBills, bills_today: bills_today.length };
+    return { todaySales, pendingAmt, monthSales, totalBills: bills.length, bills_today: bills_today.length };
   },
 
   // ---- EXPORT / IMPORT ----
   exportAll() {
     return {
-      customers: this.getCustomers(),
-      bills: this.getBills(),
-      settings: this.getSettings(),
+      customers: this.getAllCustomers(),
+      bills: this.getAllBills(),
+      settings: this.getRawSettings(),
       exportedAt: new Date().toISOString()
     };
   },
 
   importAll(data) {
-    if (data.customers) this.saveCustomers(data.customers);
-    if (data.bills) this.saveBills(data.bills);
-    if (data.settings) this.saveSettings(data.settings);
+    if (data.customers) this.saveAllCustomers(data.customers);
+    if (data.bills) this.saveAllBills(data.bills);
+    if (data.settings) this.saveRawSettings(data.settings);
   },
 
   // ---- INVOICE TEMPLATE ----
@@ -399,7 +620,6 @@ const Storage = {
   getAdminPassword() {
     const stored = this.get(KEYS.ADMIN_PASSWORD, null);
     if (stored === null) {
-      // Initialize default password and sync to cloud
       this.set(KEYS.ADMIN_PASSWORD, 'icc2025');
       return 'icc2025';
     }
@@ -416,9 +636,10 @@ const Storage = {
   }
 };
 
-// Make globally available
 window.Storage = Storage;
 window.KEYS = KEYS;
 window.DEFAULT_CATALOG = DEFAULT_CATALOG;
+window.CARVINO_CATALOG = CARVINO_CATALOG;
+window.DEFAULT_COMPANY_ID = DEFAULT_COMPANY_ID;
 
 Storage.initCloudSync().catch(error => console.error('Cloud sync failed:', error));

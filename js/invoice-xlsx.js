@@ -136,7 +136,7 @@
         day: '2-digit'
       }).replace(/\//g, '-');
       
-      var filename = 'ICC-Invoice-' + bill.billNo + '-' + formattedDate + '.pdf';
+      var filename = String((bill.billNo || 'Invoice') + ' - ' + (bill.customerName || 'Customer')).replace(/[\\/:*?"<>|]+/g, '-') + '.pdf';
       
       // Use html2pdf if available
       if (typeof html2pdf !== 'undefined') {
@@ -332,7 +332,7 @@
       pdf.text('Thank you for your business!', pageWidth / 2, yPosition, { align: 'center' });
       pdf.text('Generated on ' + new Date().toLocaleString('en-IN'), pageWidth / 2, yPosition + 6, { align: 'center' });
 
-      var filename = 'ICC-Invoice-' + bill.billNo + '-' + formattedDate.replace(/\//g, '-') + '.pdf';
+      var filename = String((bill.billNo || 'Invoice') + ' - ' + (bill.customerName || 'Customer')).replace(/[\\/:*?"<>|]+/g, '-') + '.pdf';
       pdf.save(filename);
 
       showToast('Invoice downloaded: ' + filename, 'success');
@@ -757,7 +757,7 @@
       pdf.text('Generated on ' + new Date().toLocaleString('en-IN'), pageWidth / 2, yPosition + 6, { align: 'center' });
 
       // ---- Download PDF ----
-      var filename = 'ICC-Invoice-' + bill.billNo + '-' + formattedDate.replace(/\//g, '-') + '.pdf';
+      var filename = String((bill.billNo || 'Invoice') + ' - ' + (bill.customerName || 'Customer')).replace(/[\\/:*?"<>|]+/g, '-') + '.pdf';
       pdf.save(filename);
 
       showToast('Invoice downloaded: ' + filename, 'success');

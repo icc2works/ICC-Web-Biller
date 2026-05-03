@@ -23,6 +23,67 @@
     </div>
   </div>
 
+  <div class="settings-section">
+    <div class="settings-section-title">Company Profile</div>
+    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">
+      Switch between two company profiles. Customers, bills, item catalog, invoice numbers, and invoice URL are separate for each profile.
+    </p>
+
+    <div class="grid-2 mb-16">
+      <div class="form-group" style="margin-bottom:0;">
+        <label for="settingsCompanySelect">Active Company</label>
+        <select id="settingsCompanySelect" onchange="switchSettingsCompany(this.value)"></select>
+      </div>
+      <div class="form-group" style="margin-bottom:0;">
+        <label for="companyLabel">Short Label</label>
+        <input type="text" id="companyLabel" placeholder="e.g. ICC, Carvino">
+      </div>
+    </div>
+
+    <div class="grid-2 mb-16">
+      <div class="form-group" style="margin-bottom:0;">
+        <label for="companyName">Company Name</label>
+        <input type="text" id="companyName" placeholder="Company name shown on invoice">
+      </div>
+      <div class="form-group" style="margin-bottom:0;">
+        <label for="billPrefix">Invoice Prefix</label>
+        <input type="text" id="billPrefix" placeholder="e.g. ICC, CNO" maxlength="12">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="companyAddress">Company Address</label>
+      <textarea id="companyAddress" rows="3" placeholder="Full billing address"></textarea>
+    </div>
+
+    <div class="grid-2 mb-16">
+      <div class="form-group" style="margin-bottom:0;">
+        <label for="companyPhone">Phone 1</label>
+        <input type="text" id="companyPhone" placeholder="Primary phone">
+      </div>
+      <div class="form-group" style="margin-bottom:0;">
+        <label for="companyPhone2">Phone 2</label>
+        <input type="text" id="companyPhone2" placeholder="Secondary phone">
+      </div>
+    </div>
+
+    <div class="grid-2 mb-16">
+      <div class="form-group" style="margin-bottom:0;">
+        <label for="companyGST">GST Number</label>
+        <input type="text" id="companyGST" placeholder="Optional GST number">
+      </div>
+      <div class="form-group" style="margin-bottom:0;">
+        <label for="companyWebsite">Website</label>
+        <input type="url" id="companyWebsite" placeholder="https://example.com">
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-bottom:0;">
+      <label for="invoiceScriptUrl">Invoice Apps Script URL</label>
+      <input type="url" id="invoiceScriptUrl" placeholder="https://script.google.com/macros/s/.../exec">
+    </div>
+  </div>
+
 
   <!-- ═══════════════ ADD NEW ITEM ═══════════════ -->
   <div class="settings-section">
@@ -246,6 +307,27 @@
   // ---- Load form values ----
   function loadSettings() {
     const s = Storage.getSettings();
+    const profiles = Storage.getCompanyProfiles();
+    const companySel = document.getElementById('settingsCompanySelect');
+    if (companySel) {
+      companySel.innerHTML = '';
+      profiles.forEach(function(profile) {
+        const opt = document.createElement('option');
+        opt.value = profile.id;
+        opt.textContent = (profile.label || profile.companyName || profile.id);
+        if (profile.id === Storage.getActiveCompanyId()) opt.selected = true;
+        companySel.appendChild(opt);
+      });
+    }
+    setValue('companyLabel', s.label || '');
+    setValue('companyName', s.companyName || '');
+    setValue('companyAddress', s.companyAddress || '');
+    setValue('companyPhone', s.companyPhone || '');
+    setValue('companyPhone2', s.companyPhone2 || '');
+    setValue('companyGST', s.companyGST || '');
+    setValue('companyWebsite', s.website || '');
+    setValue('billPrefix', s.billPrefix || '');
+    setValue('invoiceScriptUrl', s.invoiceScriptUrl || '');
     // Load theme toggle state
     var currentTheme = s.theme || document.documentElement.getAttribute('data-theme') || 'dark';
     var darkBtn = document.getElementById('themeDarkBtn');
@@ -260,11 +342,44 @@
   function saveAllSettings() {
     const existing = Storage.getSettings();
     const settings = {
-      ...existing
+      ...existing,
+      label: getValue('companyLabel'),
+      companyName: getValue('companyName'),
+      companyAddress: getValue('companyAddress'),
+      companyPhone: getValue('companyPhone'),
+      companyPhone2: getValue('companyPhone2'),
+      companyGST: getValue('companyGST'),
+      website: getValue('companyWebsite'),
+      billPrefix: (getValue('billPrefix') || 'INV').toUpperCase().replace(/[^A-Z0-9-]/g, ''),
+      colorTone: Storage.getActiveCompanyId() === 'company2' ? 'carvino' : 'icc',
+      invoiceScriptUrl: getValue('invoiceScriptUrl')
     };
     Storage.saveSettings(settings);
     showToast('Settings saved successfully!', 'success');
+    if (typeof refreshCompanyLabels === 'function') refreshCompanyLabels();
     updateStorageStats();
+  }
+
+  function setValue(id, value) {
+    const el = document.getElementById(id);
+    if (el) el.value = value || '';
+  }
+
+  function getValue(id) {
+    const el = document.getElementById(id);
+    return el ? el.value.trim() : '';
+  }
+
+  function switchSettingsCompany(companyId) {
+    saveAllSettings();
+    if (typeof switchCompanyWithEffect === 'function') {
+      switchCompanyWithEffect(companyId);
+    } else {
+      Storage.setActiveCompanyId(companyId);
+      loadSettings();
+      renderCatalog();
+      updateStorageStats();
+    }
   }
 
   // ---- CATALOG RENDER ----
@@ -428,7 +543,7 @@
 
   function resetCatalogToDefaults() {
     confirmAction('Reset entire item catalog to factory defaults? Your price edits will be lost.', () => {
-      Storage.saveCatalog(DEFAULT_CATALOG);
+      Storage.saveCatalog(Storage.getActiveCompanyId() === 'company2' ? CARVINO_CATALOG : DEFAULT_CATALOG);
       showToast('Catalog reset to defaults', 'success');
       renderCatalog();
     });

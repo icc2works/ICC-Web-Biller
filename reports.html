@@ -404,13 +404,7 @@
   let currentGstBills = [];
 
   document.addEventListener('DOMContentLoaded', () => {
-    // Populate customer select
-    const sel = document.getElementById('filterCustomer');
-    Storage.getCustomers().forEach(c => {
-      const opt = document.createElement('option');
-      opt.value = c.id; opt.textContent = c.name;
-      sel.appendChild(opt);
-    });
+    populateReportCustomerFilter();
 
     // Check URL params
     const params = new URLSearchParams(window.location.search);
@@ -434,6 +428,20 @@
   });
 
   function applyFilters() { loadReports(); }
+
+  function populateReportCustomerFilter(selectedId) {
+    const sel = document.getElementById('filterCustomer');
+    if (!sel) return;
+    const previous = selectedId !== undefined ? selectedId : sel.value;
+    sel.innerHTML = '<option value="">All Customers</option>';
+    Storage.getCustomers().forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.id;
+      opt.textContent = c.name;
+      if (c.id === previous) opt.selected = true;
+      sel.appendChild(opt);
+    });
+  }
 
   function resetFilters() {
     document.getElementById('filterFrom').value = '';

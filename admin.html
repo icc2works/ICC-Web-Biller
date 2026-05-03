@@ -435,13 +435,10 @@
 
     // ---- Invoice Sequence Reset ----
     function updateSeqDisplay() {
-      const currentSeq = Storage.get(KEYS.BILL_SEQ, 0);
+      const currentSeq = Storage.getBillSequence();
       document.getElementById('currentSeqDisplay').textContent = currentSeq;
       const nextSeq = currentSeq + 1;
-      const now = new Date();
-      const mm = String(now.getMonth() + 1).padStart(2, '0');
-      const dd = String(now.getDate()).padStart(2, '0');
-      document.getElementById('nextInvoicePreview').textContent = 'ICC-' + mm + dd + '-' + String(nextSeq).padStart(3, '0');
+      document.getElementById('nextInvoicePreview').textContent = Storage.previewBillNumber(nextSeq);
     }
 
     function resetInvoiceSequence() {
@@ -450,15 +447,12 @@
       if (isNaN(newSeq) || newSeq < 0) newSeq = 0;
 
       const nextNum = newSeq + 1;
-      const now = new Date();
-      const mm = String(now.getMonth() + 1).padStart(2, '0');
-      const dd = String(now.getDate()).padStart(2, '0');
-      const preview = 'ICC-' + mm + dd + '-' + String(nextNum).padStart(3, '0');
+      const preview = Storage.previewBillNumber(nextNum);
 
       confirmAction(
         `Reset invoice sequence to ${newSeq}? The next bill will be ${preview}. Existing bills are not affected.`,
         () => {
-          Storage.set(KEYS.BILL_SEQ, newSeq);
+          Storage.setBillSequence(null, newSeq);
           input.value = '';
           updateSeqDisplay();
           showToast(`Invoice sequence reset to ${newSeq}. Next bill: ${preview}`, 'success');

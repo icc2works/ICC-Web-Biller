@@ -131,6 +131,9 @@ function normalizeCarvinoCatalog(existingCatalog) {
       return saved ? { ...item, price: Number(saved.price || 0) } : item;
     });
   });
+  Object.keys(existing).forEach(function(category) {
+    if (!catalog[category]) catalog[category] = cloneCatalog(existing[category]);
+  });
   return catalog;
 }
 
@@ -178,6 +181,7 @@ function rememberActiveCompanyId(companyId) {
 
 const Storage = {
   cloudReady: false,
+  _lastCloudWrite: Promise.resolve(),
 
   // ---- GENERIC (in-memory cache) ----
   get(key, fallback = null) {
@@ -200,12 +204,25 @@ const Storage = {
 
   remove(key) {
     delete _cache[key];
-    if (window.CloudDB) window.CloudDB.removeData(key);
+    if (window.CloudDB) {
+      this._lastCloudWrite = window.CloudDB.removeData(key).catch(error => {
+        console.error('Cloud DB remove failed:', error);
+        return false;
+      });
+    }
   },
 
   _saveToCloud(key, value) {
-    if (!SYNC_KEYS.includes(key)) return;
-    if (window.CloudDB) window.CloudDB.setData(key, value);
+    if (!SYNC_KEYS.includes(key) || !window.CloudDB) return Promise.resolve(false);
+    this._lastCloudWrite = window.CloudDB.setData(key, value).catch(error => {
+      console.error('Cloud DB save failed:', error);
+      return false;
+    });
+    return this._lastCloudWrite;
+  },
+
+  whenCloudIdle() {
+    return this._lastCloudWrite || Promise.resolve();
   },
 
   getLocalCloudPayload() {

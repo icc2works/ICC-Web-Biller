@@ -27,6 +27,20 @@
       padding: 20px;
       overflow-x: auto;
     }
+    .products-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .catalog-add-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      font-size: 22px;
+      line-height: 1;
+      flex: 0 0 auto;
+    }
   </style>
 </head>
 <body class="no-sidebar">
@@ -99,13 +113,14 @@
 
       <!-- Items Section -->
       <div class="items-box">
-        <div class="flex-between mb-16">
+        <div class="products-head mb-16">
           <div>
             <div class="section-label">Products</div>
             <div style="font-size:12px;color:var(--text-secondary);">
               <span id="itemCount">0</span> items · Unit Price × Qty = Subtotal
             </div>
           </div>
+          <button class="btn btn-primary btn-icon catalog-add-btn" type="button" onclick="openQuickCatalogModal()" title="Add category or item">+</button>
         </div>
 
         <!-- Column headers -->
@@ -201,6 +216,47 @@
   </div>
 </div>
 
+<!-- Quick Add Catalog Modal -->
+<div class="modal-overlay" id="addCatalogModal">
+  <div class="modal" style="max-width:760px;">
+    <div class="modal-header">
+      <div class="modal-title">Add New Item</div>
+      <button class="modal-close" onclick="closeModal('addCatalogModal')">x</button>
+    </div>
+
+    <div style="border:1.5px solid rgba(0,214,194,0.35);background:rgba(0,214,194,0.08);border-radius:14px;padding:18px;margin-bottom:18px;">
+      <div class="section-label" style="color:var(--accent-3);margin-bottom:14px;">Add New Category</div>
+      <div class="grid-2" style="align-items:flex-end;">
+        <div class="form-group" style="margin-bottom:0;">
+          <label for="quickNewCatName">Category Name</label>
+          <input type="text" id="quickNewCatName" placeholder="e.g. Laser Engraving">
+        </div>
+        <button class="btn btn-success btn-lg" type="button" onclick="quickAddCategoryOnly()" style="height:48px;">+ Add Category</button>
+      </div>
+    </div>
+
+    <div style="border:1.5px solid rgba(79,158,255,0.45);background:rgba(79,158,255,0.08);border-radius:14px;padding:18px;">
+      <div class="grid-2 mb-16">
+        <div class="form-group" style="margin-bottom:0;">
+          <label for="quickItemCat">Category</label>
+          <select id="quickItemCat"></select>
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <label for="quickItemName" id="quickItemLabel">Item Name</label>
+          <input type="text" id="quickItemName" placeholder="e.g. Photo Engraving">
+        </div>
+      </div>
+      <div class="grid-2" style="align-items:flex-end;">
+        <div class="form-group" style="margin-bottom:0;">
+          <label for="quickItemPrice" id="quickPriceLabel">Default Price</label>
+          <input type="number" id="quickItemPrice" placeholder="0" min="0" step="0.01">
+        </div>
+        <button class="btn btn-primary btn-lg" type="button" onclick="quickAddCatalogItem()" style="height:48px;">+ Add Item</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
 <script src="js/cloud-db.js"></script>
@@ -219,6 +275,102 @@
       if (taxRow) taxRow.style.display = 'none';
     }
   });
+
+  function populateQuickItemCategories(selectedCat) {
+    var select = document.getElementById('quickItemCat');
+    if (!select) return;
+    var catalog = Storage.getCatalog();
+    var cats = Object.keys(catalog);
+    select.innerHTML = '';
+    cats.forEach(function(cat) {
+      var opt = document.createElement('option');
+      opt.value = cat;
+      opt.textContent = cat;
+      if (cat === selectedCat) opt.selected = true;
+      select.appendChild(opt);
+    });
+  }
+
+  function getCurrentBillCategory() {
+    var rows = document.querySelectorAll('.item-row');
+    var lastRow = rows.length ? rows[rows.length - 1] : null;
+    var catSel = lastRow && lastRow.querySelector('.item-cat');
+    return catSel && catSel.value ? catSel.value : '';
+  }
+
+  function openQuickCatalogModal() {
+    var carvino = typeof isCarvinoBilling === 'function' && isCarvinoBilling();
+    var itemLabel = document.getElementById('quickItemLabel');
+    var priceLabel = document.getElementById('quickPriceLabel');
+    var itemInput = document.getElementById('quickItemName');
+    var priceInput = document.getElementById('quickItemPrice');
+
+    if (itemLabel) itemLabel.textContent = carvino ? 'Material Name' : 'Item Name';
+    if (priceLabel) priceLabel.textContent = carvino ? 'Default Rate / Sqft' : 'Default Price';
+    if (itemInput) itemInput.placeholder = carvino ? 'e.g. Acrylic Sheet' : 'e.g. Photo Engraving';
+    if (priceInput) priceInput.placeholder = carvino ? 'Rate per sqft' : '0';
+    populateQuickItemCategories(getCurrentBillCategory());
+    openModal('addCatalogModal');
+    setTimeout(function() {
+      var catInput = document.getElementById('quickNewCatName');
+      if (catInput) catInput.focus();
+    }, 80);
+  }
+
+  async function quickAddCategoryOnly() {
+    var catName = document.getElementById('quickNewCatName').value.trim();
+    if (!catName) { showToast('Category name is required', 'warning'); return; }
+    if (!Storage.addCatalogCategory(catName)) {
+      showToast('Category already exists', 'warning');
+      populateQuickItemCategories(catName);
+      return;
+    }
+
+    populateQuickItemCategories(catName);
+    if (typeof refreshCatalogRows === 'function') refreshCatalogRows(catName);
+
+    var cloudSaved = typeof Storage.whenCloudIdle === 'function' ? await Storage.whenCloudIdle() : true;
+    document.getElementById('quickNewCatName').value = '';
+    if (cloudSaved === false) {
+      showToast('Category added locally. Cloud sync is still pending.', 'warning');
+      return;
+    }
+    showToast('Category "' + catName + '" added', 'success');
+  }
+
+  async function quickAddCatalogItem() {
+    var catName = document.getElementById('quickItemCat').value.trim();
+    var itemName = document.getElementById('quickItemName').value.trim();
+    var price = parseFloat(document.getElementById('quickItemPrice').value) || 0;
+
+    if (!catName) { showToast('Select a category', 'warning'); return; }
+    if (!itemName) { showToast('Item name is required', 'warning'); return; }
+
+    var catalog = Storage.getCatalog();
+    if (!catalog[catName]) catalog[catName] = [];
+    var existing = catalog[catName].find(function(item) {
+      return item && item.name && item.name.toLowerCase() === itemName.toLowerCase();
+    });
+    if (existing) {
+      existing.price = price;
+    } else {
+      catalog[catName].push({ name: itemName, price: price });
+    }
+
+    Storage.saveCatalog(catalog);
+    if (typeof refreshCatalogRows === 'function') refreshCatalogRows(catName, itemName, price);
+
+    var cloudSaved = typeof Storage.whenCloudIdle === 'function' ? await Storage.whenCloudIdle() : true;
+    document.getElementById('quickItemName').value = '';
+    document.getElementById('quickItemPrice').value = '';
+    closeModal('addCatalogModal');
+
+    if (cloudSaved === false) {
+      showToast('Item added locally. Cloud sync is still pending.', 'warning');
+      return;
+    }
+    showToast('"' + itemName + '" added to ' + catName, 'success');
+  }
 
   function quickAddCustomer() {
     var name    = document.getElementById('qcName').value.trim();

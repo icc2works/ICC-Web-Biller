@@ -518,15 +518,21 @@
     });
   }
 
-  function addCatalogCategoryUI() {
+  async function addCatalogCategoryUI() {
     const name = document.getElementById('newCatName').value.trim();
     if (!name) { showToast('Enter a category name', 'warning'); return; }
     if (!Storage.addCatalogCategory(name)) {
       showToast('Category already exists', 'warning'); return;
     }
     document.getElementById('newCatName').value = '';
-    showToast(`Category "${name}" added`, 'success');
     renderCatalog(name);
+
+    const cloudSaved = typeof Storage.whenCloudIdle === 'function' ? await Storage.whenCloudIdle() : true;
+    if (cloudSaved === false) {
+      showToast(`Category "${name}" added locally. Cloud sync is still pending.`, 'warning');
+      return;
+    }
+    showToast(`Category "${name}" added`, 'success');
   }
 
   function deleteCatalogCategoryUI(category) {

@@ -189,6 +189,46 @@ function onUnitChange(select, rowId) {
   calculateTotal();
 }
 
+function refreshCatalogRows(preferredCategory, preferredItem, preferredPrice) {
+  var rows = document.querySelectorAll('.item-row');
+  if (!rows.length) {
+    addItem({ category: preferredCategory, itemName: preferredItem, unitPrice: preferredPrice });
+    return;
+  }
+
+  rows.forEach(function(row, index) {
+    var catSel = row.querySelector('.item-cat');
+    var itemSel = row.querySelector('.item-name');
+    var priceInp = row.querySelector('.item-price');
+    if (!catSel || !itemSel) return;
+
+    var targetCategory = index === rows.length - 1 && preferredCategory
+      ? preferredCategory
+      : catSel.value;
+    var catalog = Storage.getCatalog();
+    if (!catalog[targetCategory]) targetCategory = Object.keys(catalog)[0] || '';
+
+    catSel.innerHTML = buildCategoryOptions(targetCategory);
+    catSel.value = targetCategory;
+
+    var targetItem = index === rows.length - 1 && preferredItem
+      ? preferredItem
+      : itemSel.value;
+    itemSel.innerHTML = buildItemOptions(targetCategory, targetItem);
+    if (targetItem) itemSel.value = targetItem;
+
+    if (index === rows.length - 1 && preferredPrice !== undefined && priceInp) {
+      priceInp.value = Number(preferredPrice || 0) > 0 ? preferredPrice : '';
+    } else if (!isCarvinoBilling() && priceInp) {
+      var selected = itemSel.options[itemSel.selectedIndex];
+      var price = parseFloat(selected && selected.dataset ? selected.dataset.price : 0) || 0;
+      if (price > 0) priceInp.value = price;
+    }
+  });
+
+  calculateTotal();
+}
+
 function applyAutoSqftState(row) {
   var unitSelect = row.querySelector('.size-unit');
   var isAuto = unitSelect && unitSelect.value === 'auto';
@@ -429,4 +469,9 @@ document.addEventListener('DOMContentLoaded', function() {
   populateCustomerSelect('billCustomer');
   addItem();
   calculateTotal();
+  if (Storage.cloudReady) refreshCatalogRows();
+});
+
+window.addEventListener('storage-cloud-ready', function() {
+  refreshCatalogRows();
 });

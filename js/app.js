@@ -226,6 +226,8 @@ function refreshActiveCompanyViews(options) {
   if (typeof populateReportCustomerFilter === 'function') populateReportCustomerFilter();
   if (typeof loadReports === 'function') loadReports();
   if (typeof renderCatalog === 'function') renderCatalog();
+  if (typeof refreshCatalogRows === 'function') refreshCatalogRows();
+  if (typeof populateQuickItemCategories === 'function') populateQuickItemCategories(document.getElementById('quickItemCat')?.value || '');
   if (typeof loadSettings === 'function') loadSettings();
   if (typeof updateStorageStats === 'function') updateStorageStats();
   if (typeof populateCustomerSelect === 'function') {
